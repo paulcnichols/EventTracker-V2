@@ -1,0 +1,3 @@
+/tmp/cnn.txt	http://cnn.com
+/tmp/yahoo.txt	http://yahoo.com
+/tmp/fail.txt	http://failure

@@ -1,0 +1,21 @@
+binroot: /Users/pnichols/Desktop/UCSD/Project-Release/
+docroot: /Users/pnichols/Desktop/UCSD/Project-Release/data
+name: news
+start: 08/01/2012
+end: 09/01/2012
+feeds:
+  - name: npr
+    url: http://www.npr.org/rss/rss.php?id=1001
+
+  - name: usatoday
+    url: http://rssfeeds.usatoday.com/usatoday-NewsTopStories
+
+  - name: cnn
+    url: http://rss.cnn.com/rss/cnn_topstories.rss
+
+  - name: fox
+    url: http://feeds.feedburner.com/foxnews/latest
+
+  - name: abc
+    url: http://feeds.abcnews.com/abcnews/topstories 
+  
