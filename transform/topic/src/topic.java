@@ -48,7 +48,7 @@ public class topic {
 		model.addInstances(instances);
 		model.setOptimizeInterval(10);
 		model.setNumThreads(2);
-		model.setNumIterations(2000);
+		model.setNumIterations(5000);
 		model.estimate();
 
 		// Save the document-topic distributions

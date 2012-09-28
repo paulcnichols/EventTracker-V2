@@ -11,7 +11,7 @@ sub error {
   $e!\n\n";
   
   print STDERR "Usage:\
-  fetch.pl <conf.yaml>\n\n";
+  downloader.pl <conf.yaml>\n\n";
   
   print STDERR "Description: \
   This program downloads documents from a directory of meta data created \
