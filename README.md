@@ -27,7 +27,7 @@ The backend processes are primarilly comprised of lightweight perl wrappers that
 
 The highlevel design of the backend infrastructure can be viewed as a series of filters that apply to a previously downloaded file.  The sequences of processes that need to run are listed below:
 
-* Create the metadata file for each story.  One yaml file per document will be created from the RSS feeds in the master configuration file.  These files will be stored by in seperate directories.
+* Create the metadata files for each new story.  One yaml file per document will be created for the stories contained in the RSS feeds from the master configuration file.  These files will be stored by in seperate directories relative to the 'docroot' by date.
   * `perl ./rss/sync.pl conf/news.yaml`
 * Download the text data for each story.  The URL in the yaml file will be downloaded and the text content will be extracted into a txt file at the same location as the original text file.
   * `perl ./rss/downloader.pl conf/news.yaml`
