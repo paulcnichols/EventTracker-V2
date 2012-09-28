@@ -13,7 +13,7 @@ The following items are valid configurable settings:
 * docroot
   * The directory where documents are stored.
 * name
-  * A group name for the collection of rss feed data.
+  * A group name for the collection of rss feed data (used in the database).
 * start
   * A date to begin downloading documents.
 * end
@@ -23,17 +23,22 @@ The following items are valid configurable settings:
 
 Backend Processes
 -----------------
-The backend processes are primarilly comprised of lightweight perl wrappers that invoke pre-built java executables.  The perl scripts exist primarilly to make managing configuration and system tasks easier, while the java executable exist to make a subtask fast.  
+The backend processes are primarilly comprised of lightweight perl wrappers that invoke pre-built java executables.  The perl scripts exist to make managing configuration and system tasks easier, while the java executable exist to make a subtask fast.  
 
-The highlevel design of the backend infrastructure is a series of filters that apply to a previously downloaded file.  The sequences of processes that need to run are listed below.
+The highlevel design of the backend infrastructure can be viewed as a series of filters that apply to a previously downloaded file.  The sequences of processes that need to run are listed below:
 
-* Create the meta-data for each story.  One yaml file per document will be created from the RSS feeds in the master configuration file.
+* Create the metadata file for each story.  One yaml file per document will be created from the RSS feeds in the master configuration file.  These files will be stored by in seperate directories.
   * `perl ./rss/sync.pl conf/news.yaml`
-* Download the text data for each story.  The URL in the yaml file will be downloaded and the text content will be extracted into a txt file.
+* Download the text data for each story.  The URL in the yaml file will be downloaded and the text content will be extracted into a txt file at the same location as the original text file.
   * `perl ./rss/downloader.pl conf/news.yaml`
-* Apply NLP extraction.  The txt documents are processed using Apache's OpenNLP library to extract names, nouns, locations, and organizations.
+* Apply NLP extraction.  The text documents are processed using Apache's OpenNLP library to extract names, nouns, locations, and organizations.
   * `perl ./transform/nlp.pl conf/news.yaml`
-* Apply Topic Modeling.  An entire directory of txt files is processed with LDA topic modeling using the Mallet library.  
+* Apply Topic Modeling.  An entire directory of text files is processed with LDA topic modeling using the Mallet library.  
   * `perl ./transform/topic.pl conf/news.yaml` 
-
+* Apply edge creation.  The topic model data will be aggregated over one month's time to link stories together.
+  * TODO!
+* Import filter data.  The data above is imported into a MySQL database for display purpose from the portal.
+  * TODO!
+* Display.  There is a portal to explore edge data and query over the dataset.
+  * TODO!
 
