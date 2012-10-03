@@ -18,4 +18,8 @@ feeds:
 
   - name: abc
     url: http://feeds.abcnews.com/abcnews/topstories 
-  
+
+database: DBI:mysql:events;host=localhost
+database_user: root
+database_password:
+database_root: events
