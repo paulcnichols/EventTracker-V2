@@ -1,0 +1,32 @@
+Input graph depth: Depth
+Input document topic threshold: Threshold_dt
+Input topic similarity threshold: Threshold_ts
+Input document time threshold: Threshold_time
+Input starting document: Start
+Input array of document: Documents
+Input array of topic sets: Topics
+Input document to topic set map: DocTopics
+Input topic similarity matrix: TopicSimilarity
+
+Output graph: G = (Documents = V, Similarity = E)
+
+Initialize set Edges = {}
+Initialize set Documents = {Start}
+Initialize set Frontier = {Start}
+Initialize set NewFrontier = {}
+For depth in range(Depth):
+	For Document d in Frontier:
+		Add d to Documents
+		Get d_topics = {Topic t : DocTopics[d, t] > Threshold_dt}
+		For Topic t in d_topics:
+			Get similar_topics = {Topic sim_t : TopicSimilarity[t, sim_t] > Threshold_ts}
+			For Topic sim_t in similar_topics:
+				Get similar_docs = {Document sim_d : DocTopics[sim_d, sim_t] > Threshold_dt and |Age(Documents[sim_d]) - Age(Documents[d])| < Threshold_time}
+				For Document sim_d in similar_docs:
+					Add sim_d to NewFrontier If sim_d not in {Document U Frontier}
+					Add edge(d, t, DocTopics[d, t], sim_d, sim_t, DocTopics[sim_d, sim_t], TopicSimilarity[t, sim_t]) to Edges
+	Frontier = NewFrontier
+
+For Document d in Frontier:
+	Add d to Documents:
+			

@@ -65,6 +65,7 @@ CREATE TABLE `topic` (
   `alpha` float,
   PRIMARY KEY (`id`),
   KEY (`dataset_id`, `date`),
+  KEY `date` (`date`)
   FOREIGN KEY (`dataset_id`) REFERENCES dataset(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -85,3 +86,11 @@ CREATE TABLE `document_topic` (
   FOREIGN KEY (`topic_id`) REFERENCES topic(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+CREATE TABLE `topic_similarity` (
+  `topic_a` int,
+  `topic_b` int,
+  `cosign_similarity` float,
+  PRIMARY KEY (`topic_a`, `topic_b`),
+  FOREIGN KEY (`topic_a`) REFERENCES topic(`id`),
+  FOREIGN KEY (`topic_b`) REFERENCES topic(`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
