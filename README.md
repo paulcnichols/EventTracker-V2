@@ -35,10 +35,10 @@ The highlevel design of the backend infrastructure can be viewed as a series of 
   * `perl ./transform/nlp.pl conf/news.yaml`
 * Apply Topic Modeling.  An entire directory of text files is processed with LDA topic modeling using the Mallet library.  
   * `perl ./transform/topic.pl conf/news.yaml` 
-* Apply edge creation.  The topic model data will be aggregated over one month's time to link stories together.
-  * TODO!
-* Import filter data.  The data above is imported into a MySQL database for display purpose from the portal.
-  * TODO!
+* Import data to database.  The data above is imported into a MySQL database for display purpose from the portal.
+  * `perl ./import/import.pl conf/news.yaml`
+* Apply edge creation.  Similarities between topic model data will precomputed over one month's time.  These topic similarites link stories together.  
+  * `perl ./import/edge.pl conf/news.yaml`
 * Display.  There is a portal to explore edge data and query over the dataset.
   * TODO!
 

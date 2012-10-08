@@ -1,0 +1,14 @@
+<div class="container" id='thumbs'>
+  <h1>Recent Documents</h1>
+  [% FOREACH d in documents %]
+    <div class="row">
+      <div class="span3"><strong>[% d.timestamp %]</strong></div>
+      <div class="span9">
+        <a href='/[% d.name %]/explore/[% d.id %]'>[% d.title %]</a>
+        <p>
+        <p>
+      </div>
+    </div>
+  [% END %]
+  </div>
+</div>

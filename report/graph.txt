@@ -11,7 +11,7 @@ Input topic similarity matrix: TopicSimilarity
 Output graph: G = (Documents = V, Similarity = E)
 
 Initialize set Edges = {}
-Initialize set Documents = {Start}
+Initialize set Documents = {}
 Initialize set Frontier = {Start}
 Initialize set NewFrontier = {}
 For depth in range(Depth):

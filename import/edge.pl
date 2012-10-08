@@ -104,5 +104,6 @@ for my $date (@{$dbh->selectall_arrayref(qq|select distinct(date) from topic ord
   }
   
   # drop a trigger file to avoid processing topic again
+  $date =~ s/-/_/g;
   `touch $config->{docroot}/$config->{name}/$date.sim`;
 }

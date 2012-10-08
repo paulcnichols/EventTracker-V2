@@ -1,0 +1,6 @@
+<script type="text/javascript" src="/javascripts/raphael-min.js"></script>
+<script type="text/javascript" src="/javascripts/Grapher.js"></script>
+<script type="text/javascript" charset="utf-8">
+  G = new Grapher('[% dataset %]', [% document_id %]);
+  G.update();
+</script>
