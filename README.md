@@ -40,5 +40,5 @@ The highlevel design of the backend infrastructure can be viewed as a series of 
 * Apply edge creation.  Similarities between topic model data will precomputed over one month's time.  These topic similarites link stories together.  
   * `perl ./import/edge.pl conf/news.yaml`
 * Display.  There is a portal to explore edge data and query over the dataset.
-  * TODO!
+  * `perl portal/Story/bin/app.pl --port <port>` 
 
