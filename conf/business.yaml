@@ -1,0 +1,31 @@
+binroot: /Users/pnichols/Desktop/UCSD/Project-Release/
+docroot: /Users/pnichols/Desktop/UCSD/Project-Release/data
+name: business
+start: 08/01/2012
+end: 10/01/2012
+feeds:
+  - name: fox
+    url: http://feeds.foxbusiness.com/foxbusiness/latest
+
+  - name: time
+    url: http://business.time.com/feed/
+
+  - name: chicago
+    url: http://www.chicagotribune.com/business/rss2.0.xml
+
+  - name: businessweek
+    url: http://www.businessweek.com/feeds/homepage.rss
+
+  - name: businessinsider
+    url: http://feeds2.feedburner.com/businessinsider
+
+  - name: msnbc
+    url: http://www.msnbc.msn.com/id/3032071/device/rss/rss.xml
+
+  - name: washingtonpost
+    url: http://www.washingtonpost.com/rss/business
+
+database: DBI:mysql:events;host=localhost
+database_user: root
+database_password:
+database_root: events
