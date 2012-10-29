@@ -1,12 +1,54 @@
-function Grapher(dataset, id) {
-  this.dataset = dataset;
-  this.id = id;
-  this.plot = function (data) {
-
+function follow(name, id) {
+  var location = '/' + name + '/subgraph/' + id + '?';
+  location += 'branch='+ $('#branch').val() + '&';
+  location += 'depth='+ $('#depth').val() + '&';
+  location += 'sim_thresh='+ $('#sim_thresh').val() + '&';
+  location += 'topic_thresh='+ $('#topic_thresh').val();
+  document.location = location;
+};
+function Grapher(name, data, center, container, info) {  
+  function update_info(n) {
+    var info_div = $('#'+info);
+    info_div.empty();
+    info_div.append('<h2><a href="javascript:void(0)" onclick="follow(\'' + name + '\', '+ n.id +')">'+ n.date + ': ' + n.title+'</a></h2>');
+    var forward = [];
+    var backward = [];
+    var added = {};
+    $.each(n.peers.sort(
+      function (a, b) { return b.published - a.published; }),
+      function (p, pn) {
+        var title = pn.date + ': ' + pn.title;
+        if (title in added) return;
+        var li = '<li><small><a href="javascript:void(0)" onclick="follow(\'' + name + '\', '+ pn.id +')">' + title + '</a></small></li>';
+        if (pn.published > n.published) {
+          forward.push(li);
+        }
+        else {
+          backward.push(li);
+        }
+        added[title] = 1;
+      }
+    );
+    if (forward.length > 0) {
+      info_div.append('<p><strong>Forward Edges</strong><ul>' + forward.join('') + '</ul></p>');
+    }
+    if (backward.length > 0) {
+      info_div.append('<p><strong>Backward Edges</strong><ul>' + backward.join('') + '</ul></p>');
+    }
+    n.circle.toFront()
+  };
+  
+  function update_container() {
     // convert strings to numbers
     $.each(data.nodes, function (i, n) {
       n.id = parseInt(n.id);
       n.published = parseInt(n.published);
+      if (n.id == center) {
+        n.center = true;
+      }
+      else {
+        n.center = false;
+      }
     });
     
     
@@ -32,8 +74,9 @@ function Grapher(dataset, id) {
     var max_t = data.nodes[tot-1].published;
     if (min_t == max_t) return;
     
-    // Creates canvas 
-    var paper = Raphael(25, 25, x_max + 2*x_pad, y_max + 2*y_pad);
+    // Creates canvas
+    $('#'+container).empty();
+    var paper = Raphael(container, x_max + 2*x_pad, y_max + 2*y_pad);
     
     // Draw x axis
     paper.path(['M', x_pad, y_pad + y_max, 'H', x_pad + x_max].join(' '))
@@ -81,15 +124,21 @@ function Grapher(dataset, id) {
     });
     
     // Plot the nodes
+    var center_node;
     $.each(nodes, function (i, n) {
       // plot a circle for the node
       n.px = x_pad + ((n.published-min_t)/(max_t-min_t))*x_max;
       //n.py = y_pad / 2 + (i/tot)*y_max;
       n.py = y_pad + ((n.height-min_h)/(max_h-min_h))*y_max;
-      n.radius = 4;
+      n.radius = n.center ? 6 : 4;
       n.edges = [];
       n.peers = [];
-      n.circle = paper.circle(n.px, n.py, n.radius).attr({fill:'grey', 'stroke-width':2});
+      n.circle = paper.circle(n.px, n.py, n.radius).attr({
+        'fill-opactiy' : 95,
+        'fill' : n.center ? 'yellow': 'grey',
+        'stroke' : n.center ? 'blue' : 'black',
+        'stroke-width' : 2});
+      if (n.center) center_node = n;
       
       // set a tooltip
       n.circle.attr({title:n.title});
@@ -109,6 +158,7 @@ function Grapher(dataset, id) {
             p.circle.attr({fill:'yellow', stroke:'red'}).toFront();
           });
           n.circle.attr({fill:'yellow', stroke:'red'}).toFront();
+          update_info(n);
         },
         function () {
           if (n.circle.clicked) return;
@@ -117,10 +167,22 @@ function Grapher(dataset, id) {
             e.attr({stroke:'black'}).toBack()
           });
           $.each(n.peers, function (j, p) {
-            p.circle.attr({fill:'grey', stroke:'black'});
+            p.circle.attr({
+              fill:p.center ? 'yellow': 'grey',
+              stroke:p.center ? 'blue' : 'black'});
           });
-          n.circle.attr({fill:'grey', stroke:'black'});
+          n.circle.attr({
+            fill:n.center ? 'yellow': 'grey',
+            stroke:n.center ? 'blue' : 'black'});
           $.each(nodes, function (j, p) { p.circle.toFront(); } );
+          update_info(center_node);
+        }
+      );
+      
+      n.circle.click(
+        function () {
+          center_node = n;
+          update_info(center_node)
         }
       );
       /*
@@ -183,9 +245,14 @@ function Grapher(dataset, id) {
         function () {
           if (p.clicked == 1) return;
           p.attr({stroke:'black'}).toBack();
-          a.circle.attr({fill:'grey', stroke:'black'});
-          b.circle.attr({fill:'grey', stroke:'black'});          
+          a.circle.attr({
+              fill:a.center ? 'yellow': 'grey',
+              stroke:a.center ? 'blue' : 'black'});
+          b.circle.attr({
+              fill:b.center ? 'yellow': 'grey',
+              stroke:b.center ? 'blue' : 'black'});          
           $.each(nodes, function (j, p) { p.circle.toFront(); } );
+          update_info(center_node);
         }
       );
       p.click(
@@ -199,8 +266,9 @@ function Grapher(dataset, id) {
       b.peers.push(a);
     });
     $.each(nodes, function (j, p) { p.circle.toFront(); } );
+    update_info(center_node);
   };
-  this.update = function () {
-    $.get('/' + dataset + '/subgraph/' + id, this.plot);
-  }
+  
+  // kick off whole shebang
+  update_container();
 }

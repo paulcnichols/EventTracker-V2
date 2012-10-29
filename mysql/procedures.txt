@@ -1,0 +1,139 @@
+delimiter //
+drop procedure if exists neighbors_sim //
+create procedure neighbors_sim( 
+  start_id int,
+  tstamp int,
+  similarity_threshold float,
+  topic_threshold float
+)
+begin
+  
+  (
+    select topic_a, topic_b, cosign_similarity, t.weight as weight_a,
+           sim_d.document_id, sim_d.weight as weight_b, tsim_info.date
+    from document_topic t
+    join topic_similarity tsim on (t.topic_id = tsim.topic_b)
+    join topic tsim_info on (tsim.topic_a = tsim_info.id)
+    join document_topic sim_d on (sim_d.topic_id = tsim.topic_a)
+    where 
+      t.document_id = start_id and
+      sim_d.document_id != start_id and
+      tsim.cosign_similarity > similarity_threshold and
+      tsim_info.date >= date_sub(from_unixtime(tstamp), interval 30 day) and 
+      tsim_info.date <= date_add(from_unixtime(tstamp), interval 30 day) and
+      t.weight >= topic_threshold and
+      sim_d.weight >= topic_threshold
+  ) union
+  (
+    select topic_a, topic_b, cosign_similarity, t.weight as weight_a,
+           sim_d.document_id, sim_d.weight as weight_b, tsim_info.date
+    from document_topic t
+    join topic_similarity tsim on (t.topic_id = tsim.topic_a)
+    join topic tsim_info on (tsim.topic_b = tsim_info.id)
+    join document_topic sim_d on (sim_d.topic_id = tsim.topic_b)
+    where 
+      t.document_id = start_id and
+      sim_d.document_id !=start_id and
+      tsim.cosign_similarity > similarity_threshold and
+      tsim_info.date >= date_sub(from_unixtime(tstamp), interval 30 day) and 
+      tsim_info.date <= date_add(from_unixtime(tstamp), interval 30 day) and
+      t.weight >= topic_threshold and
+      sim_d.weight >= topic_threshold
+  );
+end
+//
+
+delimiter //
+drop procedure if exists neighbors_sim_terms //
+create procedure neighbors_sim_terms( 
+  start_id int,
+  tstamp int, 
+  similarity_threshold float,
+  topic_threshold float
+)
+begin
+  select term_id, sum(c) as c from 
+  (
+    select term_id, sum(count) as c
+    from document_topic t
+    join topic_similarity tsim on (t.topic_id = tsim.topic_b)
+    join topic tsim_info on (tsim.topic_a = tsim_info.id)
+    join document_topic sim_d on (sim_d.topic_id = tsim.topic_a)
+    straight_join document_term dt on (dt.document_id = sim_d.document_id)
+    where 
+      t.document_id = start_id and
+      sim_d.document_id != start_id and
+      tsim.cosign_similarity > similarity_threshold and
+      tsim_info.date >= date_sub(from_unixtime(tstamp), interval 30 day) and 
+      tsim_info.date <= date_add(from_unixtime(tstamp), interval 30 day) and
+      t.weight >= topic_threshold and
+      sim_d.weight >= topic_threshold
+    group by term_id
+  union all
+    select term_id, sum(count) as c
+    from document_topic t
+    join topic_similarity tsim on (t.topic_id = tsim.topic_a)
+    join topic tsim_info on (tsim.topic_b = tsim_info.id)
+    join document_topic sim_d on (sim_d.topic_id = tsim.topic_b)
+    straight_join document_term dt on (dt.document_id = sim_d.document_id)
+    where 
+      t.document_id = start_id and
+      sim_d.document_id !=start_id and
+      tsim.cosign_similarity > similarity_threshold and
+      tsim_info.date >= date_sub(from_unixtime(tstamp), interval 30 day) and 
+      tsim_info.date <= date_add(from_unixtime(tstamp), interval 30 day) and
+      t.weight >= topic_threshold and
+      sim_d.weight >= topic_threshold
+  ) terms
+  group by term_id;
+end
+//
+
+delimiter //
+drop procedure if exists neighbors_sim_entities //
+create procedure neighbors_sim_entities( 
+  start_id int,
+  tstamp int, 
+  similarity_threshold float,
+  topic_threshold float
+)
+begin
+  select entity_id, type, sum(c) as c from 
+  (
+    select entity_id, type, sum(count) as c
+    from document_topic t
+    join topic_similarity tsim on (t.topic_id = tsim.topic_b)
+    join topic tsim_info on (tsim.topic_a = tsim_info.id)
+    join document_topic sim_d on (sim_d.topic_id = tsim.topic_a)
+    straight_join document_entity de on (de.document_id = sim_d.document_id)
+    straight_join entity e on (de.entity_id = e.id)
+    where 
+      t.document_id = start_id and
+      sim_d.document_id != start_id and
+      tsim.cosign_similarity > similarity_threshold and
+      tsim_info.date >= date_sub(from_unixtime(tstamp), interval 30 day) and 
+      tsim_info.date <= date_add(from_unixtime(tstamp), interval 30 day) and
+      t.weight >= topic_threshold and
+      sim_d.weight >= topic_threshold
+    group by de.entity_id, e.type
+  union all
+    select entity_id, type, sum(count) as c
+    from document_topic t
+    join topic_similarity tsim on (t.topic_id = tsim.topic_a)
+    join topic tsim_info on (tsim.topic_b = tsim_info.id)
+    join document_topic sim_d on (sim_d.topic_id = tsim.topic_b)
+    straight_join document_entity de on (de.document_id = sim_d.document_id)
+    straight_join entity e on (de.entity_id = e.id)
+    where 
+      t.document_id = start_id and
+      sim_d.document_id !=start_id and
+      tsim.cosign_similarity > similarity_threshold and
+      tsim_info.date >= date_sub(from_unixtime(tstamp), interval 30 day) and 
+      tsim_info.date <= date_add(from_unixtime(tstamp), interval 30 day) and
+      t.weight >= topic_threshold and
+      sim_d.weight >= topic_threshold
+    group by de.entity_id, e.type
+  ) entities
+  group by entity_id, type;
+end
+//

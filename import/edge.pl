@@ -83,9 +83,16 @@ sub cosign_similarity {
   $topic_sim->execute($id_a, $id_b, $similarity);
 }
 
-for my $date (@{$dbh->selectall_arrayref(qq|select distinct(date) from topic order by date asc|)}) {
+my $dates = $dbh->selectall_arrayref(qq|
+              select distinct(date) 
+              from topic 
+              where 
+                dataset_id = $dataset_id 
+              order by date asc|);
+for my $date (@$dates) {
   $date = $date->[0];
-  next if -e "$config->{docroot}/$config->{name}/$date.sim";
+  my $fdate = $date; $fdate =~ s/-/_/g;
+  next if -e "$config->{docroot}/$config->{name}/$fdate.sim";
   
   # status
   print "$date ...\n";
@@ -104,6 +111,5 @@ for my $date (@{$dbh->selectall_arrayref(qq|select distinct(date) from topic ord
   }
   
   # drop a trigger file to avoid processing topic again
-  $date =~ s/-/_/g;
-  `touch $config->{docroot}/$config->{name}/$date.sim`;
+  `touch $config->{docroot}/$config->{name}/$fdate.sim`;
 }

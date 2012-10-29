@@ -21,7 +21,9 @@ CREATE TABLE `document` (
   `url` text,
   `dataset_id` int,
   `published` int(11) NOT NULL,
+  `date` date not null,
   PRIMARY KEY (`id`),
+  KEY `date` (`date`),
   FOREIGN KEY (`dataset_id`) REFERENCES dataset(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -65,7 +67,7 @@ CREATE TABLE `topic` (
   `alpha` float,
   PRIMARY KEY (`id`),
   KEY (`dataset_id`, `date`),
-  KEY `date` (`date`)
+  KEY `date` (`date`),
   FOREIGN KEY (`dataset_id`) REFERENCES dataset(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -78,10 +80,14 @@ CREATE TABLE `topic_term` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 CREATE TABLE `document_topic` (
+  `dataset_id` int not null,
   `document_id` int not null,
   `topic_id` int not null,
   `weight` float,
+  KEY (`dataset_id`, `document_id`, `topic_id`),
   KEY (`document_id`, `topic_id`),
+  KEY (`topic_id`),
+  FOREIGN KEY (`dataset_id`) REFERENCES dataset(`id`),
   FOREIGN KEY (`document_id`) REFERENCES document(`id`),
   FOREIGN KEY (`topic_id`) REFERENCES topic(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
@@ -94,3 +100,21 @@ CREATE TABLE `topic_similarity` (
   FOREIGN KEY (`topic_a`) REFERENCES topic(`id`),
   FOREIGN KEY (`topic_b`) REFERENCES topic(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+delimiter $$
+
+CREATE TABLE `edge_intersection` (
+  `document_a` int(11) NOT NULL DEFAULT '0',
+  `document_b` int(11) NOT NULL DEFAULT '0',
+  `topic_a` int(11) NOT NULL DEFAULT '0',
+  `topic_b` int(11) NOT NULL DEFAULT '0',
+  `topic_prod` float NOT NULL,
+  `term_prob` float NOT NULL,
+  `term_raw` float NOT NULL,
+  `term_weighted` float NOT NULL,
+  PRIMARY KEY (`document_a`,`document_b`,`topic_a`,`topic_b`),
+  KEY `document_b` (`document_b`),
+  KEY `topic_a` (`topic_a`),
+  KEY `topic_b` (`topic_b`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1$$
+

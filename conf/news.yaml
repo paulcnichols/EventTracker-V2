@@ -2,7 +2,7 @@ binroot: /Users/pnichols/Desktop/UCSD/Project-Release/
 docroot: /Users/pnichols/Desktop/UCSD/Project-Release/data
 name: news
 start: 08/01/2012
-end: 09/01/2012
+end: 10/01/2012
 feeds:
   - name: npr
     url: http://www.npr.org/rss/rss.php?id=1001

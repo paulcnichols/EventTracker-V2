@@ -4,6 +4,7 @@ use Dancer::Plugin::Database;
 # Get recent articles as a starting point
 sub get_recent {
   my $name = shift;
+  my $offset = shift || 0;
   my $limit = shift || 100;
   
   # get dataset id
@@ -13,8 +14,8 @@ sub get_recent {
                       from document
                       where dataset_id = ?
                       order by published desc
-                      limit ?|);
-  $sth->execute($dataset_id, $limit);
+                      limit ?, ?|);
+  $sth->execute($dataset_id, $offset, $limit);
   my $documents = [];
   while (my $r=$sth->fetchrow_hashref) {
     $r->{name} = $name;
@@ -35,19 +36,17 @@ sub neighbors {
                       sim_d.document_id as doc_id,
                       (log(t.weight)+log(tsim.cosign_similarity)+log(sim_d.weight)) as edge
               from document_topic t
-              join topic t_info on (t.topic_id = t_info.id)
               join topic_similarity tsim on (t.topic_id = tsim.%s)
               join topic tsim_info on (tsim.%s = tsim_info.id)
               join document_topic sim_d on (sim_d.topic_id = tsim.%s)
               where 
                 t.document_id = %d and
                 sim_d.document_id != %d and
-                t_info.dataset_id = %d and
-                -- t.weight > %f and
                 tsim.cosign_similarity > %f and
-                -- sim_d.weight > %f and
                 tsim_info.date >= date_sub(from_unixtime(%d), interval 30 day) and 
-                tsim_info.date <= date_add(from_unixtime(%d), interval 30 day)
+                tsim_info.date <= date_add(from_unixtime(%d), interval 30 day) and
+                t.weight >= %f and
+                sim_d.weight >= %f
               order by edge desc
               limit %d|,
             $params->{incoming} ? 'topic_b' : 'topic_a',
@@ -55,13 +54,12 @@ sub neighbors {
             $params->{incoming} ? 'topic_a' : 'topic_b',
             $params->{id},
             $params->{id},
-            $params->{dataset_id},
-            $params->{topic_thresh},
             $params->{sim_thresh},
+            $params->{published},
+            $params->{published},
             $params->{topic_thresh},
-            $params->{published},
-            $params->{published},
-            $params->{limit});
+            $params->{topic_thresh},
+            $params->{branch});
   my $sth = database->prepare($sql); $sth->execute();
   my $results = [];
   while (my $r = $sth->fetchrow_hashref) { push @$results, $r; }
@@ -84,7 +82,7 @@ sub get_subgraph {
   
   # initialize
   my $depth = $params->{depth};
-  my $limit = $params->{limit};
+  my $branch = $params->{branch};
   my $dataset_id = database->quick_select('dataset', {name => $params->{name}})->{id};
   my $start = database->quick_select('document', {id => $document_id});
   my $edges = [];
@@ -102,7 +100,7 @@ sub get_subgraph {
       
       # params to neighbor routine
       my $n = {id => $d->{id},
-               limit => $limit,
+               branch => $branch,
                dataset_id => $dataset_id,
                published => $d->{published},
                topic_thresh => $params->{topic_thresh},
@@ -146,8 +144,10 @@ sub get_subgraph {
   for my $d (keys(%$frontier)) {
     $vertices->{$d} = $frontier->{$d};
   }
-  
-  return {start => $document_id, nodes => [values(%$vertices)], edges => $edges};
+
+  return {start => $vertices->{$document_id},
+          nodes => [sort {$b->{published} <=> $a->{published}} values(%$vertices)],
+          edges => $edges};
 }
 
 

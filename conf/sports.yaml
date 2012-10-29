@@ -1,0 +1,28 @@
+binroot: /Users/pnichols/Desktop/UCSD/Project-Release/
+docroot: /Users/pnichols/Desktop/UCSD/Project-Release/data
+name: sports
+start: 08/01/2012
+end: 10/01/2012
+feeds:
+  - name: espn
+    url: http://sports-ak.espn.go.com/espn/rss/news
+
+  - name: si
+    url: http://rss.cnn.com/rss/si_topstories.rss
+
+  - name: cbs
+    url: http://www.cbssports.com/partners/feeds/rss/home_news
+
+  - name: lat
+    url: http://www.latimes.com/sports/rss2.0.xml
+
+  - name: aol
+    url: http://aol.sportingnews.com/rss
+
+  - name: nbc
+    url: http://rss.nbcsports.msnbc.com/id/3032112/device/rss/rss.xml
+
+database: DBI:mysql:events;host=localhost
+database_user: root
+database_password:
+database_root: events

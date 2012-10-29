@@ -54,7 +54,7 @@ my $entity_select = $dbh->prepare(qq|select * from entity where str = ? and type
 my $entity_insert = $dbh->prepare(qq|insert into entity (str, type) values(?, ?)|);
 my $doc_term_insert = $dbh->prepare(qq|insert into document_term (document_id, term_id, count) values (?, ?, ?) on duplicate key update count = count + ?|);
 my $doc_entity_insert = $dbh->prepare(qq|insert into document_entity (document_id, entity_id, count) values (?, ?, ?) on duplicate key update count = count + ?|);
-my $doc_insert = $dbh->prepare(qq|insert into document (title, url, dataset_id, published) values (?, ?, ?, ?)|);
+my $doc_insert = $dbh->prepare(qq|insert into document (title, url, dataset_id, published, date) values (?, ?, ?, ?, date(from_unixtime(?)))|);
 my $topic_insert = $dbh->prepare(qq|insert into topic (dataset_id, date, alpha) values (?, ?, ?)|);
 my $topic_term_insert = $dbh->prepare(qq|insert into topic_term (topic_id, term_id, beta) values (?, ?, ?)|);
 my $doc_topic_insert = $dbh->prepare(qq|insert into document_topic (document_id, topic_id, weight) values (?, ?, ?)|);
@@ -152,6 +152,7 @@ for my $f (glob($config->{docroot} . '/' . $config->{name} . '/*.alpha')) {
     $doc_insert->execute($document->{title},
                          $document->{url},
                          $document->{dataset_id},
+                         $document->{published},
                          $document->{published});
     my $document_id = $dbh->{mysql_insertid};
     
