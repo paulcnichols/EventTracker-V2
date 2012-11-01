@@ -101,7 +101,13 @@ CREATE TABLE `topic_similarity` (
   FOREIGN KEY (`topic_b`) REFERENCES topic(`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
-delimiter $$
+CREATE TABLE `document_similarity` (
+  `document_a` int(11) NOT NULL DEFAULT '0',
+  `document_b` int(11) NOT NULL DEFAULT '0',
+  `cosign_similarity` float DEFAULT NULL,
+  PRIMARY KEY (`document_a`,`document_b`),
+  KEY `document_b` (`document_b`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 CREATE TABLE `edge_intersection` (
   `document_a` int(11) NOT NULL DEFAULT '0',

@@ -42,6 +42,10 @@ my $topic_sim = $dbh->prepare(qq|
                         insert into topic_similarity
                         (topic_a, topic_b, cosign_similarity) values
                         (?, ?, ?)|);
+my $document_sim = $dbh->prepare(qq|
+                        insert into document_similarity
+                        (document_a, document_b, cosign_similarity) values
+                        (?, ?, ?)|);
 my $topic_date = $dbh->prepare(qq|
                         select t.date, tt.topic_id, tt.term_id, tt.beta
                         from topic t
@@ -50,6 +54,14 @@ my $topic_date = $dbh->prepare(qq|
                           t.dataset_id = $dataset_id and
                           ? >= t.date and
                           t.date > date(date_sub(?, interval 30 DAY))|);
+my $document_date = $dbh->prepare(qq|
+                        select d.date, dt.document_id, dt.term_id, dt.count
+                        from document d
+                        join document_term dt on (d.id =  dt.document_id)
+                        where
+                          d.dataset_id = $dataset_id and
+                          ? >= d.date and
+                          d.date > date(date_sub(?, interval 30 DAY))|);
 sub topic_window {
   my $date = shift;
   my $topics = {};
@@ -58,6 +70,15 @@ sub topic_window {
     $topics->{$t->{date}}->{$t->{topic_id}}->{$t->{term_id}} = $t->{beta};
   }
   return $topics;
+}
+sub document_window {
+  my $date = shift;
+  my $documents = {};
+  $document_date->execute($date, $date);
+  while (my $t = $document_date->fetchrow_hashref()) {
+    $documents->{$t->{date}}->{$t->{document_id}}->{$t->{term_id}} = $t->{count};
+  }
+  return $documents;
 }
 
 sub cosign_similarity {
@@ -80,9 +101,10 @@ sub cosign_similarity {
   }
   $norm_b = sqrt($norm_b);
   $similarity = $dot / ($norm_a * $norm_b);
-  $topic_sim->execute($id_a, $id_b, $similarity);
+  return $similarity
 }
 
+# first do topic similarity
 my $dates = $dbh->selectall_arrayref(qq|
               select distinct(date) 
               from topic 
@@ -105,11 +127,50 @@ for my $date (@$dates) {
   for my $topic_a (keys(%$curr)) {
     for my $prev (sort keys(%$topics)) {
       for my $topic_b (keys(%{$topics->{$prev}})) {
-        cosign_similarity($topic_a, $curr->{$topic_a}, $topic_b, $topics->{$prev}->{$topic_b});
+        my $s = cosign_similarity($topic_a, $curr->{$topic_a}, $topic_b, $topics->{$prev}->{$topic_b});        
+        $topic_sim->execute($topic_a, $topic_b, $s);
       }
     }
   }
   
   # drop a trigger file to avoid processing topic again
   `touch $config->{docroot}/$config->{name}/$fdate.sim`;
+}
+
+# now do document similarity
+$dates = $dbh->selectall_arrayref(qq|
+              select distinct(date) 
+              from document 
+              where 
+                dataset_id = $dataset_id 
+              order by date asc|);
+for my $date (@$dates) {
+  $date = $date->[0];
+  my $fdate = $date; $fdate =~ s/-/_/g;
+  next if -e "$config->{docroot}/$config->{name}/$fdate.dsim";
+  
+  # status
+  print "Doc $date ...\n";
+
+  # get the topics for the current day and 30 days prior
+  my $documents = document_window($date);
+  
+  # compute similarity between topics
+  my @days = sort keys(%$documents);
+  for my $document_a (sort keys(%{$documents->{$date}})) {
+    for my $day (@days) {
+      for my $document_b (sort keys(%{$documents->{$day}})) {
+        # skip same day repeats
+        next if ($date eq $day and $document_a <= $document_b);
+        my $s = cosign_similarity($document_a,
+                                  $documents->{$date}->{$document_a},
+                                  $document_b,
+                                  $documents->{$day}->{$document_b});
+        $document_sim->execute($document_a, $document_b, $s) if $s > .25;
+      }
+    }
+  }
+  
+  # drop a trigger file to avoid processing topic again
+  `touch $config->{docroot}/$config->{name}/$fdate.dsim`;
 }
