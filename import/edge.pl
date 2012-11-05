@@ -29,6 +29,8 @@ for my $f (qw(database database_user database_password database_root docroot nam
   error("Missing field '$f'") if !exists($config->{$f});
 }
 
+my $DAYS = 15;
+
 # create the database handle
 my $dbh = DBI->connect(
                     $config->{database},
@@ -53,7 +55,7 @@ my $topic_date = $dbh->prepare(qq|
                         where
                           t.dataset_id = $dataset_id and
                           ? >= t.date and
-                          t.date > date(date_sub(?, interval 30 DAY))|);
+                          t.date > date(date_sub(?, interval $DAYS DAY))|);
 my $document_date = $dbh->prepare(qq|
                         select d.date, dt.document_id, dt.term_id, dt.count
                         from document d
@@ -61,7 +63,7 @@ my $document_date = $dbh->prepare(qq|
                         where
                           d.dataset_id = $dataset_id and
                           ? >= d.date and
-                          d.date > date(date_sub(?, interval 30 DAY))|);
+                          d.date > date(date_sub(?, interval $DAYS DAY))|);
 sub topic_window {
   my $date = shift;
   my $topics = {};
@@ -114,12 +116,12 @@ my $dates = $dbh->selectall_arrayref(qq|
 for my $date (@$dates) {
   $date = $date->[0];
   my $fdate = $date; $fdate =~ s/-/_/g;
-  next if -e "$config->{docroot}/$config->{name}/$fdate.sim";
+  next if -e "$config->{docroot}/$config->{name}/$fdate.tsim";
   
   # status
   print "$date ...\n";
 
-  # get the topics for the current day and 30 days prior
+  # get the topics for the current day and X days prior
   my $topics = topic_window($date);
   
   # compute similarity between topics
@@ -128,13 +130,13 @@ for my $date (@$dates) {
     for my $prev (sort keys(%$topics)) {
       for my $topic_b (keys(%{$topics->{$prev}})) {
         my $s = cosign_similarity($topic_a, $curr->{$topic_a}, $topic_b, $topics->{$prev}->{$topic_b});        
-        $topic_sim->execute($topic_a, $topic_b, $s);
+        $topic_sim->execute($topic_a, $topic_b, $s) if $s > .3;
       }
     }
   }
   
   # drop a trigger file to avoid processing topic again
-  `touch $config->{docroot}/$config->{name}/$fdate.sim`;
+  `touch $config->{docroot}/$config->{name}/$fdate.tsim`;
 }
 
 # now do document similarity
@@ -152,21 +154,19 @@ for my $date (@$dates) {
   # status
   print "Doc $date ...\n";
 
-  # get the topics for the current day and 30 days prior
+  # get the documents for the current day and X days prior
   my $documents = document_window($date);
   
-  # compute similarity between topics
-  my @days = sort keys(%$documents);
-  for my $document_a (sort keys(%{$documents->{$date}})) {
-    for my $day (@days) {
+  # remove current day
+  my $curr = delete($documents->{$date});
+  for my $document_a (sort keys(%$curr)) {
+    for my $day (reverse sort keys(%$documents)) {
       for my $document_b (sort keys(%{$documents->{$day}})) {
-        # skip same day repeats
-        next if ($date eq $day and $document_a <= $document_b);
         my $s = cosign_similarity($document_a,
-                                  $documents->{$date}->{$document_a},
+                                  $curr->{$document_a},
                                   $document_b,
                                   $documents->{$day}->{$document_b});
-        $document_sim->execute($document_a, $document_b, $s) if $s > .25;
+        $document_sim->execute($document_a, $document_b, $s) if $s > .3;
       }
     }
   }

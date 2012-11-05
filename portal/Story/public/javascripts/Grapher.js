@@ -3,7 +3,9 @@ function follow(name, id) {
   location += 'branch='+ $('#branch').val() + '&';
   location += 'depth='+ $('#depth').val() + '&';
   location += 'sim_thresh='+ $('#sim_thresh').val() + '&';
-  location += 'topic_thresh='+ $('#topic_thresh').val();
+  location += 'doc_thresh='+ $('#doc_thresh').val() + '&';
+  location += 'topic_thresh='+ $('#topic_thresh').val() + '&';
+  location += 'method='+ $('#method').val();
   document.location = location;
 };
 function Grapher(name, data, center, container, info) {  

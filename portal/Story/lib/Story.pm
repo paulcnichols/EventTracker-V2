@@ -24,10 +24,12 @@ get '/:name/subgraph/:document_id/?' => sub {
     my $settings = {name => $name,
                     document_id => params->{document_id},
                     depth => params->{depth} ? int(params->{depth}) : 3,
-                    branch => params->{branch} ? int(params->{branch}) : 5,
+                    branch => params->{branch} ? int(params->{branch}) : 2,
                     sim_thresh => params->{sim_thresh} ? params->{sim_thresh} : .9,
                     topic_thresh => params->{topic_thresh} ? params->{topic_thresh} : .3,
-                    window => params->{window} ? params->{window} : 30};
+                    doc_thresh => params->{doc_thresh} ? params->{doc_thresh} : .3,
+                    window => params->{window} ? params->{window} : 30,
+                    method => params->{method} ? params->{method} : 'topic',};
     my $data = StoryUtil::get_subgraph($settings);
     template 'explore', {name=>$name,
                          start=>$data->{start},
