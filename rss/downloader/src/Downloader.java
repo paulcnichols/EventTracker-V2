@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.*;
 import java.net.*;
 import java.util.concurrent.*;
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 public class Downloader {
 	
@@ -52,7 +53,7 @@ public class Downloader {
 			if ((nfetched + nfailed + nskipped + 1) % 100 == 0) {
 				System.out.println("Status: " + nfetched + " fetched, " + nfailed + " failed, " + nskipped + " skipped.");
 			}
-			
+
 			String kv[] = line.split("\t");
 			File success = new File(kv[0]+".txt");
 			File bow = new File(kv[0]+".bow");
@@ -66,10 +67,10 @@ public class Downloader {
 				}
 				
 				// Use jericho's built in downloader to extract text
+				ArticleExtractor ae = new ArticleExtractor();
 				URL u = new URL(kv[1]);
-				Source source = new Source(u);
-				String txt = source.getRenderer().toString();
-				txt = txt.replaceAll("<[^>]*>", "");
+				String txt = ae.getText(u);
+				txt = txt.toLowerCase();
 				
 				// Write the resulting text content to a txt file
 				FileUtils.writeStringToFile(success, txt);

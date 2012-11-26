@@ -132,6 +132,8 @@ for my $f (glob($config->{docroot} . '/' . $config->{name} . '/*.alpha')) {
     close TOPICS;
   };
   
+  $dbh->{AutoCommit} = 0;
+  
   # load the beta distribution
   open BETA, $beta and do {
     while (<BETA>) {
@@ -140,6 +142,8 @@ for my $f (glob($config->{docroot} . '/' . $config->{name} . '/*.alpha')) {
       $topic_term_insert->execute($topic_map->{$topic}, term_to_id($term), $weight);
     }
   };
+
+  $dbh->{AutoCommit} = 1;
   
   # import the documents
   for my $bow (glob("$dir/*.bow")) {
@@ -155,7 +159,7 @@ for my $f (glob($config->{docroot} . '/' . $config->{name} . '/*.alpha')) {
                          $document->{published},
                          $document->{published});
     my $document_id = $dbh->{mysql_insertid};
-    
+  
     # read document terms
     my $terms = {};
     open BOW, $bow and do {
@@ -167,6 +171,8 @@ for my $f (glob($config->{docroot} . '/' . $config->{name} . '/*.alpha')) {
       }
       close BOW;
     };
+    
+    $dbh->{AutoCommit} = 0;
     
     # add document_terms
     for my $t (keys(%$terms)) {
@@ -232,6 +238,8 @@ for my $f (glob($config->{docroot} . '/' . $config->{name} . '/*.alpha')) {
       }
       close TOPICS;
     };
+    
+    $dbh->{AutoCommit} = 1;
   }
 }
 

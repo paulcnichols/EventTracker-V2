@@ -4,5 +4,8 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/commons-io-2.4.jar"/>
 	<classpathentry kind="lib" path="lib/jericho-html-3.2.jar"/>
+	<classpathentry kind="lib" path="lib/boilerpipe-1.2.0.jar"/>
+	<classpathentry kind="lib" path="lib/nekohtml-1.9.13.jar"/>
+	<classpathentry kind="lib" path="lib/xerces-2.9.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

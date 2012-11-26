@@ -10,7 +10,7 @@ push @steps, {cmd=>"perl rss/downloader.pl $conf", status=>"Downloading Articles
 push @steps, {cmd=>"perl transform/nlp.pl $conf", status=>"Applying NLP Extraction"};
 push @steps, {cmd=>"perl transform/topic.pl $conf", status=>"Applying Topic Modeling"};
 push @steps, {cmd=>"perl import/import.pl $conf", status=>"Importing features into database"};
-push @steps, {cmd=>"perl import/edge.pl $conf", status=>"Computing topic-topic similarities"};
+push @steps, {cmd=>"perl import/edge_compiled.pl $conf", status=>"Computing topic-topic similarities"};
  
 for my $s (@steps) {
   print "\n########################################\n";

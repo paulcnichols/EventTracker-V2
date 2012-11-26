@@ -6,9 +6,9 @@ import java.util.*;
 import java.io.*;
 
 import org.apache.commons.io.FileUtils;
+import org.yaml.snakeyaml.Yaml;
 
 public class topic {
-	public static final int TOP_TERMS_PER_TOPIC = 100;
 	
 	public static void main(String[] args) throws Exception {
 
@@ -37,6 +37,24 @@ public class topic {
 		for (File f : new File(directory).listFiles()) {
 			if (f.toString().endsWith(".txt")) {
 				String content = FileUtils.readFileToString(f, "UTF-8");
+				
+				// Boost the document with the title if available  
+				File yaml_file = new File(f.toString().replace(".txt", ""));
+				if (yaml_file.exists()) {
+					Yaml yp = new Yaml();
+					Map<String, String> data = (Map<String, String>) yp.load(FileUtils.readFileToString(yaml_file));
+					if (data != null && data.get("title") != null) {
+						String title = data.get("title");
+						if (title.length() > 0) {
+							for (int i=0; i < 5; ++i) {
+								content.concat(" ");
+								content.concat(title);
+							}
+						}
+					}
+				}
+				
+				// Remove punctuation and add to corpus
 				content = content.replaceAll("\\p{Punct}", "");
 				instances.addThruPipe(
 					new Instance(content, null, f.toString(), null));
@@ -47,7 +65,7 @@ public class topic {
 		ParallelTopicModel model = new ParallelTopicModel(numTopics, 1.0, 0.01);
 		model.addInstances(instances);
 		model.setOptimizeInterval(10);
-		model.setNumThreads(2);
+		model.setNumThreads(4);
 		model.setNumIterations(5000);
 		model.estimate();
 

@@ -1,0 +1,55 @@
+<link href='http://fonts.googleapis.com/css?family=Fugaz+One' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Josefin+Sans:100,400' rel='stylesheet' type='text/css'>
+<style type="text/css">
+  #panel-top {
+    position:fixed;
+    height:30;
+    width:100%;
+    z-index:1;
+    background-color:white;
+    padding-top:20px;
+    margin-bottom:20;
+    font-family: 'Fugaz One', cursive;
+    font-size:50;
+    border-bottom:solid;
+  }
+  
+  .panel-arrow {
+    position:fixed;
+    height:95%;
+    width:75px;
+    top:70;
+  }
+  .panel-arrow-inner {
+    position:fixed;
+    height:100%;
+    width:75px;
+    top:40%;
+    text-align:center;
+    font-family: 'Fugaz One', cursive;
+    font-size:40
+  }
+  .panel-arrow:hover {
+    background-color:lightgrey;
+    border-radius:25;
+  }
+  #panel {
+    position:relative;
+    top:70;
+    left:85;
+    text-align:center
+  }
+  .fake-link:hover {
+    text-decoration:underline;
+  }
+</style>
+<div id="panel-top"></div>
+<div id="panel-left" class="panel-arrow" style="left:0"><div class="panel-arrow-inner">&#060;&#060;</div></div>
+<div id="panel-right" class="panel-arrow" style="right:0"><div class="panel-arrow-inner">&#062;&#062;</div></div>
+<div id="panel"></div>
+
+<script type="text/javascript" src="/javascripts/raphael-min.js"></script>
+<script type="text/javascript" src="/javascripts/Cloud.js"></script>
+<script type="text/javascript" charset="utf-8">
+  Cloud('[% name %]');
+</script>

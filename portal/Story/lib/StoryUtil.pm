@@ -65,7 +65,7 @@ sub neighbors {
                         sim_d.document_id as doc_id,
                         (log(t.weight)+log(tsim.cosign_similarity)+log(sim_d.weight)) as edge
                 from document_topic t
-                join topic_similarity_small tsim on (t.topic_id = tsim.%s)
+                join topic_similarity tsim on (t.topic_id = tsim.%s)
                 join topic tsim_info on (tsim.%s = tsim_info.id)
                 join document_topic sim_d on (sim_d.topic_id = tsim.%s)
                 where 

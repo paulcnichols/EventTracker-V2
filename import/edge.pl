@@ -125,6 +125,7 @@ for my $date (@$dates) {
   my $topics = topic_window($date);
   
   # compute similarity between topics
+  print "Computing distance...\n";
   my $curr = delete($topics->{$date});
   for my $topic_a (keys(%$curr)) {
     for my $prev (sort keys(%$topics)) {
@@ -157,7 +158,10 @@ for my $date (@$dates) {
   # get the documents for the current day and X days prior
   my $documents = document_window($date);
   
+  $dbh->{AutoCommit} = 0;
+  
   # remove current day
+  print "Computing distance...\n";
   my $curr = delete($documents->{$date});
   for my $document_a (sort keys(%$curr)) {
     for my $day (reverse sort keys(%$documents)) {
@@ -166,10 +170,14 @@ for my $date (@$dates) {
                                   $curr->{$document_a},
                                   $document_b,
                                   $documents->{$day}->{$document_b});
-        $document_sim->execute($document_a, $document_b, $s) if $s > .3;
+        $dbh->do(sprintf(qq|insert into document_similarity
+                        (document_a, document_b, cosign_similarity) values
+                        (%d, %d, %f)|, $document_a, $document_b, $s)) if $s > .3;
       }
     }
   }
+  $dbh->commit();
+  $dbh->{AutoCommit} = 1;
   
   # drop a trigger file to avoid processing topic again
   `touch $config->{docroot}/$config->{name}/$fdate.dsim`;

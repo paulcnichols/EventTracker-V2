@@ -1,5 +1,6 @@
 package Story;
 use StoryUtil;
+use Cloud;
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
 
@@ -19,13 +20,30 @@ get '/:name/?' => sub {
     template 'index', {documents => StoryUtil::get_recent($name, $offset, $limit)};
 };
 
+get '/cloud_data/:name/:offset/?' => sub {
+    my $name = params->{name};
+    my $offset = params->{offset};
+    return to_json(Cloud::do($name, $offset));
+};
+
+get '/cloud_data_topic/:name/:topic/?' => sub {
+    my $name = params->{name};
+    my $topic = params->{topic};
+    return to_json(Cloud::do_topic($name, $topic));
+};
+
+get '/cloud/:name/?' => sub {
+    my $name = params->{name};
+    template 'cloud', {name=>$name};  
+};
+
 get '/:name/subgraph/:document_id/?' => sub {
     my $name = params->{name};
     my $settings = {name => $name,
                     document_id => params->{document_id},
                     depth => params->{depth} ? int(params->{depth}) : 3,
                     branch => params->{branch} ? int(params->{branch}) : 2,
-                    sim_thresh => params->{sim_thresh} ? params->{sim_thresh} : .9,
+                    sim_thresh => params->{sim_thresh} ? params->{sim_thresh} : .8,
                     topic_thresh => params->{topic_thresh} ? params->{topic_thresh} : .3,
                     doc_thresh => params->{doc_thresh} ? params->{doc_thresh} : .3,
                     window => params->{window} ? params->{window} : 30,

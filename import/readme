@@ -1,0 +1,26 @@
+Scripts:
+-import.pl
+  - used to import the documents, topics, and document-topic data into the database.  required before any edge creation can be run.
+
+-edge.pl
+  - precompute similarities
+-edge_compiled.pl
+  - precompute similarities, but in java so its way faster
+
+
+Edge creation assumes:
+-document_topic weights > .15
+-document_similairity > .6 (news) > .75 (sports), .85 (business)
+  -maps to top 20% for each dataset
+-topic_similarity > .85
+  -same for all datasets
+
+Edge creation (boosted) assumes:
+-document_topic weights > .15
+-document_similarity > .7 (news), .7 (sports), .8 (business)
+-topic_similarity > .8
+
+Edge creation (boosted, normalized) assumes:
+-document_topic weights > .15
+-document_similarity > .7 (news), .45 (sports), .65 (business)
+-topic_similarity > .7 (news), .6 (sports, business)
