@@ -116,7 +116,7 @@ sub get_topic_documents {
                                   join document_topic_all dt on (d.id = dt.document_id)
                                   where
                                     dt.topic_id = $topic and
-                                    dt.weight > .05
+                                    dt.weight > .15
                                   order by weight desc|);
     $sth->execute();
     $documents = [];
@@ -178,8 +178,14 @@ sub do {
     
     # get top terms for each topic
     for my $t (keys(%$topics)) {
-      $topics->{$t}->{words} = [@{get_topic_terms($t)}[0..9]];
-      $topics->{$t}->{weight} = $topic_sim->{$t} || 0;
+      my $dt = get_topic_documents($t);
+      if (scalar(@$dt) == 0) {
+        delete($topics->{$t});
+      }
+      else {       
+        $topics->{$t}->{words} = [@{get_topic_terms($t)}[0..9]];
+        $topics->{$t}->{weight} = ($topic_sim->{$t} || 0); 
+      }
     }
     $cache->set($topics_k, $topics);
   }

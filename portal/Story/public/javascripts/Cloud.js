@@ -7,6 +7,7 @@ function CloudAll(driver, name) {
   self.end = 7;
   self.top = 0;
   self.cache = {};
+  self.active = 7;
   
   self.resize = function () {
     for (var i = self.start; i < self.end; ++i) {
@@ -16,6 +17,11 @@ function CloudAll(driver, name) {
   };
 
   self.right = function () {
+    if (self.active > 0) {
+      return;
+    }
+    self.active += 1;
+    
     var first = self.range.shift();
     $('#'+first).remove();
     self.start++;
@@ -24,7 +30,10 @@ function CloudAll(driver, name) {
   };
   
   self.left = function (k) {
-    if (self.start == 0) return;
+    if (self.active > 0 || self.start == 0) {
+      return;
+    }
+    self.active += 1;
     
     var last = self.range.pop();
     $('#'+last).remove();
@@ -104,6 +113,9 @@ function CloudAll(driver, name) {
         //.css('border-radius', 15)
         .appendTo('#'+date_id);
       });
+      
+      // decrement active counter
+      self.active--;
     };
     if (offset in self.cache) {
       addOffsetHandler(self.cache[offset]);
