@@ -1,6 +1,9 @@
 \documentclass[10pt,twocolumn]{article}
 \usepackage{multicol}
-
+\usepackage{amsmath}
+\usepackage{alltt}
+\usepackage{framed}
+\usepackage{caption}
 \begin{document}
 
 \begin{multicols}{2}
@@ -33,31 +36,145 @@ This project investigates story graphs, their construction process, and their re
 \section {Background}
 Unsupervised methods for discovery and summarization of a corpus have a rich history rooted in information retrieval.  Before the more abstract task of a topic discovery became widely known, document clustering was a well studied problem.  Document clustering is used to find inter-document similarities and partitions of similar documents in a corpus.   
 
-The vector space representation of a document is a common place to begin document clustering.  The vector space representation assigns a unique dimension to each term that exists in the corpus with a given documents vector populated from its terms.  Various term weighting schemes can be applied to the document vectors such as tf-idf weighting.  These schemes enhance the similarity measures by reducing the contribution of unimportant words such as stop words.  Similarity between documents can be measured either by the cosign similarity or the euclidean distance between a vector space representation of two documents.
+The vector space representation of a document is a common place to begin document clustering.  The vector space representation of a document holds term counts by assigning a unique dimension to each term that exists in the corpus.  Various term weighting schemes can be applied to the document vectors such as tf-idf weighting.  These schemes enhance the similarity measures by reducing the contribution of unimportant words such as stop words.  Similarity between two documents in vector space can be measured with a geometric interpretation either, by the angle between them (cosign similarity) or the distance apart (euclidean distance).
 
-A good first step towards topic discovery is the K-means algorithm applied to corpus of tf-idf weighted documents in the vector space representation.  K-means attempts to find a partitioning of the corpus into K groups such that the euclidean distance of a cluster's members is minimized.  Iterative refinement from a randomly initialized means can be used to approximate this hard problem.  The most highly weighted term indices of the resulting K mean vectors from a clustering job loosely represent the topics present within the corpus.  The approach is advantageous for streaming data because the learned mean vectors can be compared across clustering jobs from different time windows easily (using either cosign similarity or euclidean distance between the means).  The approach is also desirable because it is simple and fast.  However, the technique lacks the richness of topic mixtures by assuming each document can belong to only one mean vector. 
+A good first step towards topic discovery is the K-means algorithm applied to corpus of tf-idf weighted documents in the vector space representation.  K-means attempts to find a partitioning of the corpus into K groups such that the euclidean distance of a cluster's members is minimized.  Iterative refinement from randomly initialized means can be used to approximate this hard problem.  The most highly weighted term indices of the resulting K mean vectors from a clustering job loosely represent the topics present within the corpus.  The approach is advantageous for streaming data because the learned mean vectors can be compared across clustering jobs from different time windows easily (using either cosign similarity or euclidean distance between the means).  The approach is also desirable because it is simple and fast.  However, the technique lacks the richness of topic mixtures by assuming each document can belong to only one mean vector. 
 
 Another early approach that improves upon the vector space representation is Latent Semantic Analysis (LSA).  LSA computes the singular value decomposition of a document-term matrix to find low-rank approximations of the latent document and term matrices.  The resulting matrix factorization has the property that when a pair of documents or a pair of terms are similar, they will be near (using cosign similarity or euclidean distance) in their respective vector spaces.  LSA is good step towards finding a representation that can capture synonymy and polysemy, but is not suitable in the streaming paradigm where the process repeats and regular intervals.  The resulting matrix factorizations are unique to the document-term matrix they were derived from.  There is no straight forward way to compare either the learned term or the document representations from different time windows.
 
-Probabilistic Latent Semantic Analysis (PLSA) addresses the limitations above with LSA by stepping away from the vector space representation of LSA to a probabilistic representation of terms and document.  PLSA introduces a hidden random variable to model topics and then learns document-topic and topic-term distributions through the Expectation Maximization (EM) algorithm.  PLSA can also overcome issues such as synonymy and polysemy through the topic, and has the advantage of allowing mixtures of topic (or cluster) assignments.  Lastly, PLSA is advantageous in the streaming paradigm because the resulting topic distributions are interpretable and comparable across different time windows. 
+Probabilistic Latent Semantic Analysis (PLSA) addresses the limitations above with LSA by stepping away from the vector space representation of LSA to a probabilistic representation of terms and document.  PLSA represents documents in the bag-of-word format where term frequency is maintained but not order and no geometric interpretation is applied. PLSA introduces a hidden random variable to model topics and then learns document-topic and topic-term distributions through the Expectation Maximization (EM) algorithm.  PLSA can also overcome issues such as synonymy and polysemy through the topic, and has the advantage of allowing mixtures of topic (or cluster) assignments.  Lastly, PLSA is advantageous in the streaming paradigm because the resulting topic distributions are interpretable and comparable across different time windows. 
 
-PLSA is the predecessor to LDA, the model used in this project.  LDA improves upon PLSA by modeling the document probabilities and word distributions as dependent on Dirichlet prior distributions.  This dependence on prior distributions enhances the generality of the distributions learned.  An LDA model has a more complicated and the distributions are commonly estimated using Gibbs Sampling.
+PLSA is the predecessor to LDA, the model used in this project.  LDA improves upon PLSA by modeling the document probabilities and word distributions as dependent on Dirichlet prior distributions.  This dependence on prior distributions enhances the generality of the distributions learned.  An LDA model is more complicated and the distributions are commonly estimated using Gibbs Sampling.
 
 \section {Method}
 \subsection {Graph Creation}
+The starting point of graph creation is corpus of documents partitioned by a time interval over an indefinite period.   Formally, we may represent this by the following notation where the maximum interval $T$ is ever increasing.  
+
+\begin{align*}
+\mathbf{C} &= \{ \mathbf{C}_0, \dots, \mathbf{C}_T \} \\
+\mathbf{C}_t &= \{\mathbf{d}_0^t, \dots, \mathbf{d}_N^t \} \\
+\mathbf{d}_i^t &= \{ w_{i,0}, \dots, w_{i,M} \}
+\end{align*}
+
+For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ represent the documents partitioned by day.  Each individual day's sub-corpus $\mathbf{C}_t$ is a collection documents where each document $\mathbf{d}_i^t$ is in the bag-of-word format.  Superscripts are used to denote documents and distributions from a given day $t$.  In this project LDA topic modeling is used to estimate from the daily corpus $\mathbf{C}_t$ the probability distributions of the the document-topic distribution, $\theta_{i,k}^t$, and topic-term distribution, $\phi_{j,k}^t$.
+
+\begin{center}
+\begin{tabular}{|l|l|}
+  \hline
+  \multicolumn{2}{|c|}{Summary of LDA Variables} \\
+  \hline
+  $i < N$ & Number of Documents \\
+  $j < M$ & Number of Terms \\
+  $k < K$ & Number of Topics \\
+  $w_{i, j}$ & Count of Term=j in Document=i \\
+  $z_k$ & Topic k of K \\
+  \emph{$\alpha_k$} & Document-Topic Prior Parameter\\
+  \emph{$\beta_j$} & Topic-Term Prior Parameter \\
+  $\theta_{i,k}$ & P(Topic=$z_k$ $\vert$ Document=i) \\
+  $\phi_{k,j}$ & P(Word=j $\vert$ Topic=$z_k$) \\
+  \hline
+\end{tabular}
+\end{center} 
+
+The story graph constructed from the learned distributions follows the standard form: $\mathbf{G}$ = $(\mathbf{V}, \mathbf{E})$.  A unique feature of the story graph is that the vertices in $\mathbf{V}$ can include both the documents and the topics and follows directly from the conditional dependence graph of the LDA model.  The edges in $\mathbf{E}$ are undirected, as opposed to directed when representing conditional independence, so traversals in either direction may be performed.  
+
+Edges and weighted by floating point values ranging between between $[0, 1]$.  Edges between documents are always 0 (i.e. are not allowed).  Topics may form edges with documents of the same day using the document-topic distribution.  Edges between topics across different days are formed by computing the cosign similarity on the vector space interpretation of the topic-word distributions.  Though blatantly not probabilistic, the cosign similarity between two probability distributions will at least always return a value between $[0,1]$. These topic-topic edges are precomputed between the current days topics and all previous days topic within some limit (in this project, 15 days).  The formal rules for constructing edge weights are as follows:  
+
+\begin{align*}
+  e(\mathbf{d}_i^t, \mathbf{d}_{i'}^{t'}) &= \quad 0 \qquad\quad \forall \quad i, t, i', t'\\
+  e(\mathbf{z}_k^t, \mathbf{z}_{k'}^{t'}) &= \begin{cases}
+      0 & \text{if $t=t'$} \\
+      \frac{\phi_k^t \cdot \phi_{k'}^{t'}}{||\phi_k^t||\,||\phi_{k'}^{t'}||} & \text{if $t \ne t'$}
+    \end{cases} \\
+  e(\mathbf{d}_i^t, \mathbf{z}_{k}^{t'}) &= \begin{cases}
+      \theta_{i,k}^t & \qquad\quad \text{if $t =t'$} \\
+      0 & \qquad\quad \text{if $t \ne t'$}
+    \end{cases}
+\end{align*}
+
+One consequences of the edge creation rules worth noting is that document nodes are always terminal nodes.
+
+\subsection {Query by Topic}
+
+Starting from a topic $\mathbf{z_k^t}$, a natural query is to find the sub-graph of related topics across all time.  This sub-graph can be thought of as the story a topic belongs to.  This query performs a breadth first search of the neighboring topics from different days while the product of the edge weights along each path from starting to ending topic is above a threshold between [0,1].   
+
+Querying the graph for a topic's sub-graph can, in the worse case, be somewhat expensive for long-lived, popular stories.  Breadth first search has a running time in the general case of $O(|E|)$.  However, on average a topic typically links to at most 1 or 2 other topics across time windows, so the real-world running time follows the more linear branching pattern, and the run-time is closer to $O(T)$.
+
+\begin{framed}
+\begin{center}
+\begin{alltt}
+Define: Story()
+Input:  Starting topic \(z\sb{k}\sp{t}\), 
+        Topic threshold \(thresh\sb{z}\)
+Output: Related topic set \(Z\)
+Begin:
+  Initialize \(Z = \{\}\),             
+             \(V = \{z\sb{k}\sp{t}\}\),
+             \(F = \{<z\sb{k}\sp{t}, 1>\}\)
+  While \(F \ne \{\}\):
+     Remove \(z\) from \(F\)
+     For \(z' \in\) Neighbors(\(z\)):
+       Let w = e(\(z, z'\))*weight(\(z\))
+       If \(z' \not\in\ V\) and w > \(thresh\sb{z}\):
+         \(Z = Z \bigcup z'\)
+         \(F = F \bigcup <z', w> \)
+     \(V = V \bigcup z\)
+  return \(Z\)
+End
+\end{alltt}
+\captionof{alltt}{Algorithm topic sub-graph of topic $z_k^t$}
+\end{center}
+\end{framed}
+
+
+\subsection {Query by Document}
+Another useful query on the story graph is the more classic problem of finding relevant neighboring documents given a starting document.  Recall that documents are connected to the graph only through their topic weights and that the interior of the graph is entirely edges between topics of different days.  Therefore, the traversal of the graph from one document to another may reuse the \texttt{Story()} routine presented in the previous subsection.
+
+A similar approach is taken to querying by document as by topic in that again the paths from document to document will be pruned by the product of the edge weights.
+
+\subsection {Graph Metrics}
+
+Given a topic's sub-graph, there are a number of interesting metrics that can be used to analyze the story. The first query of interest is the lifetime of a story.  The lifetime of a story is simply the maximum topic time window less the minimum.  Knowing the total time a story has existed can then be used to estimate what can be interpreted as density or velocity.  Story density/velocity is defined as the number of topics in the subgraph divided by a time range.  This time range can be the lifetime if examining a story in isolation or an arbitrary range if comparing multiple stories.  
+
+The number of documents a given topic connects to in the sub-graph provides a notion of size.  A threshold is required to ensure documents are truly relevant to the topic, which is described in the next section.  The number of relevant documents over an entire subgraph can be thought of as the story's mass. Putting the velocity and mass together, the notion of momentum can be borrowed from physics to assess how enduring a story is. 
+
+An alternative measure of size of a topic is the hyper-parameter $\alpha_k$.  In previous versions of LDA this parameter had to supplied, but now can be estimated from the corpus using a burning period.  The topic modeling software used in the project performs this estimation.
+
+\begin{align}
+\mathbf{S} & = \texttt{Story}(z_k^t) \\
+\mathbf{S} &\subset \mathbf{G} \\
+\texttt{Lifetime}(\mathbf{S}) &=\max_{z \in \mathbf{S}} \texttt{time}(z) - \min_{z \in \mathbf{S}}\texttt{time}(z) \\
+\texttt{Velocity}(\mathbf{S}) &= \frac{|\mathbf{S}|}{\Delta \text{time}} \\
+\texttt{Mass}(\mathbf{S}_{z_k^t}) &= \sum_{z \in \mathbf{S}_{z_k^t}}
+\end{align}
 
 \section {Architecture}
 
 Processing the document stream is accomplished by a nightly process that downloads content from a collection of RSS feeds for the previous day.  The entire process is composed a series of stages that happen sequentially.  While the production environment schedules the process to handle a single day's worth of data from a cron job, the process can also be run in batch mode to process all data over a provided time range.  Importantly, each stage in the processing pipeline is dependent only on the output from the previous stage.
 
-The process begins with the Sync stage by gathering the list of URLs for unprocessed data in the stream using the Google Reader undocumented API (GRAPI).  The GRAPI normalizes the many quirks and formatting issues present in a large set of RSS/Atom feeds and exposes a standard representation of a document stream.  The output of the Sync stage is a mapping for URL to path on local storage the content should be downloaded to.
+The process begins with the sync stage by gathering the list of URLs for unprocessed data in the stream using the Google Reader undocumented API (GRAPI).  The GRAPI normalizes the many quirks and formatting issues present in a large set of RSS/Atom feeds and exposes a standard representation of a document stream.  The output of the Sync stage is a mapping for URL to path on local storage the content should be downloaded to.
 
-The Fetch stage of the processing Pipeline is run after the Sync stage generates output.  The Fetch stage is responsible for downloading HTML content, extracting the relevant article content from the raw HTML, and saving the result to local disk.  Content downloading is managed by through the Apache Commons libraries.  Article extraction was originally handled by extracting text content with an HTML parser.  However, the resulting saved documents included too many artifacts of the hosting site such as advertisements, comments, and boiler plate content.  The artifacts present in the document made the topic modeling perform poorly.  To remedy this problem, a library known as boilerpipe was used to separate article content from artifact with an in-built decision tree classifier.
+The fetch stage of the processing pipeline is run after the Sync stage generates output.  This stage is responsible for downloading HTML content, extracting the relevant article content from the raw HTML, and saving the result to local disk.  Content downloading is managed by through the Apache Commons libraries.  Article extraction was originally handled by extracting text content with an HTML parser.  However, the resulting saved documents included too many artifacts of the hosting site such as advertisements, comments, and boiler plate content.  The artifacts present in the document made the topic modeling perform poorly.  To remedy this problem, a library known as ``boilerpipe`" was used to separate article content from artifact with an in-built decision tree classifier.
 
+The next stage of the pipeline performs topic modeling on the daily corpus that was created locally from the Fetch stage.  Topic modeling is handled by the ParallelTopicModel in the Mallet library.  Documents are transformed into the bag-of-word format by converting characters to lower case, removing punctuation, and splitting on whitespace.  A burn-in phase of 10 iterations is used to estimate the Dirichlet hyper-parameters. The learned topics improve qualitatively when the content is boosted by appending the a document's title 5 times.  The number of topics, K, is chosen to be half the corpus size.  This allows space for redundant themes to cluster on a single topic, but also the common situation where a topic truly has no state and may be a one time event.
 
+After the topic modeling has completed for the current day, edges are computed between topics of the previous days within a given window of time.  As time progresses, the total time frame a similar topic can be detected is the window of days before and after the topic date.  Similarity between topics is computed by treating the unnormalized topic-term distribution as a vector space representation and computing the cosign-similarity.  During this stage, alternative distance measures describe above are computed as well. 
 
+Lastly, after all the previous stages have completed the downloaded document data, topic distributions, and similarity measures are imported into a database.  After the import process completes the max date is updated so that queries may be performed agains the new, fully imported day's worth of information.  The database contains all information required by the web portal to let a user explore the data stream and answer relevant story graph queries.
 
 \section {Evaluation}
+
+\subsection {Popular Topics}
+Does the topic modeling work? Show samples of popular learned topics.
+
+\subsection {Topic Topic Edges}
+Does the edge creation work?  Show samples of topic-topic edges and histogram of typical edge weight to estimate branch factor.  Discuss threshold setting.
+
+\subsection {Topic Metrics}
+How useful are topic metrics? Show samples/summary plots of topic lifetime, velocity, and momentum
+
+\subsection {Document Topic Edges}
+Can the story graph find relevant document given a starting document.
 
 \section {Future Work}
 
