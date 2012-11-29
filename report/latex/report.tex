@@ -4,6 +4,7 @@
 \usepackage{alltt}
 \usepackage{framed}
 \usepackage{caption}
+\usepackage{pdfpages}
 \begin{document}
 
 \begin{multicols}{2}
@@ -56,7 +57,7 @@ The starting point of graph creation is corpus of documents partitioned by a tim
 \mathbf{d}_i^t &= \{ w_{i,0}, \dots, w_{i,M} \}
 \end{align*}
 
-For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ represent the documents partitioned by day.  Each individual day's sub-corpus $\mathbf{C}_t$ is a collection documents where each document $\mathbf{d}_i^t$ is in the bag-of-word format.  Superscripts are used to denote documents and distributions from a given day $t$.  In this project LDA topic modeling is used to estimate from the daily corpus $\mathbf{C}_t$ the probability distributions of the the document-topic distribution, $\theta_{i,k}^t$, and topic-term distribution, $\phi_{j,k}^t$.
+For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ represent the documents partitioned by day.  Each individual day's sub-corpus $\mathbf{C}_t$ is a collection documents where each document $\mathbf{d}_i^t$ is in the bag-of-word format.  For the purposes of this document, superscripts are used to denote documents, topics, and distributions from a given day $t$ except when describing running times.  In this project LDA topic modeling is used to estimate from the daily corpus $\mathbf{C}_t$ the probability distributions of the the document-topic distribution, $\theta_{i,k}^t$, and topic-term distribution, $\phi_{j,k}^t$.
 
 \begin{center}
 \begin{tabular}{|l|l|}
@@ -78,6 +79,11 @@ For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ re
 
 The story graph constructed from the learned distributions follows the standard form: $\mathbf{G}$ = $(\mathbf{V}, \mathbf{E})$.  A unique feature of the story graph is that the vertices in $\mathbf{V}$ can include both the documents and the topics and follows directly from the conditional dependence graph of the LDA model.  The edges in $\mathbf{E}$ are undirected, as opposed to directed when representing conditional independence, so traversals in either direction may be performed.  
 
+\begin{figure}[htp] \centering{
+\includegraphics[scale=0.82]{img/story-graph.pdf}}
+\caption{Story Graph: An example graph over $t$ to $t+4$ days}
+\end{figure}  
+
 Edges and weighted by floating point values ranging between between $[0, 1]$.  Edges between documents are always 0 (i.e. are not allowed).  Topics may form edges with documents of the same day using the document-topic distribution.  Edges between topics across different days are formed by computing the cosign similarity on the vector space interpretation of the topic-word distributions.  Though blatantly not probabilistic, the cosign similarity between two probability distributions will at least always return a value between $[0,1]$. These topic-topic edges are precomputed between the current days topics and all previous days topic within some limit (in this project, 15 days).  The formal rules for constructing edge weights are as follows:  
 
 \begin{align*}
@@ -92,18 +98,14 @@ Edges and weighted by floating point values ranging between between $[0, 1]$.  E
     \end{cases}
 \end{align*}
 
-One consequences of the edge creation rules worth noting is that document nodes are always terminal nodes.
-
 \subsection {Query by Topic}
 
 Starting from a topic $\mathbf{z_k^t}$, a natural query is to find the sub-graph of related topics across all time.  This sub-graph can be thought of as the story a topic belongs to.  This query performs a breadth first search of the neighboring topics from different days while the product of the edge weights along each path from starting to ending topic is above a threshold between [0,1].   
 
-Querying the graph for a topic's sub-graph can, in the worse case, be somewhat expensive for long-lived, popular stories.  Breadth first search has a running time in the general case of $O(|E|)$.  However, on average a topic typically links to at most 1 or 2 other topics across time windows, so the real-world running time follows the more linear branching pattern, and the run-time is closer to $O(T)$.
-
 \begin{framed}
 \begin{center}
 \begin{alltt}
-Define: Story()
+Define: Subgraph()
 Input:  Starting topic \(z\sb{k}\sp{t}\), 
         Topic threshold \(thresh\sb{z}\)
 Output: Related topic set \(Z\)
@@ -113,10 +115,10 @@ Begin:
              \(F = \{<z\sb{k}\sp{t}, 1>\}\)
   While \(F \ne \{\}\):
      Remove \(z\) from \(F\)
-     For \(z' \in\) Neighbors(\(z\)):
-       Let w = e(\(z, z'\))*weight(\(z\))
-       If \(z' \not\in\ V\) and w > \(thresh\sb{z}\):
-         \(Z = Z \bigcup z'\)
+     For \(z' \in\) TopicNeighbors(\(z\)):
+       Let \(w = \)e(\(z, z'\))*weight(\(z\))
+       If \(z' \not\in\ V\) and \(w >thresh\sb{z}\):
+         \(Z = Z \bigcup <z', w>\)
          \(F = F \bigcup <z', w> \)
      \(V = V \bigcup z\)
   return \(Z\)
@@ -126,26 +128,58 @@ End
 \end{center}
 \end{framed}
 
+Querying the graph for a topic's sub-graph can, in the worse case, be somewhat expensive for long-lived stories.  Breadth first search has a running time in the general case of $O(|E|)$.  For a given day, there will be $K^2W$ edges where $K$ is the number of topics and $W$ is the number of days compared.  A long lived story can trace through $T$ days.  Therefore, the number of edges is $O(TK^2W)$, which is less than the possible $O(T^2K^2)$ edges if windowing were not applied.  Better yet, the edges are pre-computed and only edges above the threshold are added. Typically much less than $K^2W$ edges per day are used in this query.
 
 \subsection {Query by Document}
-Another useful query on the story graph is the more classic problem of finding relevant neighboring documents given a starting document.  Recall that documents are connected to the graph only through their topic weights and that the interior of the graph is entirely edges between topics of different days.  Therefore, the traversal of the graph from one document to another may reuse the \texttt{Story()} routine presented in the previous subsection.
+Another useful query on the story graph is the more classic problem of finding relevant neighboring documents given a starting document.  Again a breadth first search is required.  Recall that documents are connected to the graph only through their topic weights and that the interior of the graph is entirely edges between topics of different days.  Therefore, the traversal of the graph from one document to another may reuse the \texttt{Subgraph()} routine presented in the previous subsection.
 
-A similar approach is taken to querying by document as by topic in that again the paths from document to document will be pruned by the product of the edge weights.
+A similar approach is taken to querying by document as by topic in that again the paths from document to document will be pruned by the product of the edge weights. To make the algorithm more efficient, a modified version of the \texttt{Subgraph()} routine is assumed where a set of starting topics can be supplied instead of only a single one.  This modification does not change the algorithm or the running time.
 
+\begin{framed}
+\begin{center}
+\begin{alltt}
+Define: Similar()
+Input:  Starting document \(d\sb{i}\sp{t}\), 
+        Topic-topic threshold \(thresh\sb{z}\),
+        Document-topic threshold \(thresh\sb{d}\)
+Output: Related document set \(D\)
+Begin:
+  Initialize \(D = \{\}\),             
+             \(F = \{\}\)
+  For \(z \in\) TopicNeighbors(\(d\sb{i}\sp{t}\)):
+    If e(\(d\sb{i}\sp{t}, z\)) \(> thresh\sb{d}\):
+      \(F = F \bigcup <z, 1>\)
+
+  For \(z \in\) Subgraph(\(F, thresh\sb{z}\)):
+    For \(d \in\) DocumentNeighbors(\(z\)):
+      Let \(w = \)e(\(d, z\))*weight(\(z\))
+      If \(w\) \(> thresh\sb{d}\):
+        \(D = D \bigcup <d, z, w>\)
+  Return \(D\)
+End
+\end{alltt}
+\captionof{alltt}{Algorithm for relevant documents $d_i^t$}
+\end{center}
+\end{framed}
+
+An interesting consequence of querying by document is that a document may be similar to another document indirectly through multiple topics. The indirect nature of the query makes the running time of the algorithm slower than querying by document.  For a given day $t$, the number of documents retrieved by any topic can be at most the number of documents that day $|\mathbf{C}^t|$.  Therefore, over all time and all topic-topic edges, a factor of $|\mathbf{C}|$ extra edges between documents need be explored.  The total running time is $O(TK^2W|C|)$.  Again, thresholds can be performed prior to updating the graph so many of the total possible edges do not exist.
+  
 \subsection {Graph Metrics}
 
-Given a topic's sub-graph, there are a number of interesting metrics that can be used to analyze the story. The first query of interest is the lifetime of a story.  The lifetime of a story is simply the maximum topic time window less the minimum.  Knowing the total time a story has existed can then be used to estimate what can be interpreted as density or velocity.  Story density/velocity is defined as the number of topics in the subgraph divided by a time range.  This time range can be the lifetime if examining a story in isolation or an arbitrary range if comparing multiple stories.  
+Given a topic's sub-graph, there are a number of interesting metrics that can be used to analyze the story. The first query of interest is the lifetime of a story.  The lifetime of a story is simply the maximum topic time window less the minimum.  Knowing the total time a story has existed can then be used to estimate what can be interpreted as density or velocity.  Story density or velocity is defined as the number of topics in the subgraph divided by a time range.  This time range can be the lifetime if examining a story in isolation or an arbitrary range if comparing multiple stories.  
 
 The number of documents a given topic connects to in the sub-graph provides a notion of size.  A threshold is required to ensure documents are truly relevant to the topic, which is described in the next section.  The number of relevant documents over an entire subgraph can be thought of as the story's mass. Putting the velocity and mass together, the notion of momentum can be borrowed from physics to assess how enduring a story is. 
 
 An alternative measure of size of a topic is the hyper-parameter $\alpha_k$.  In previous versions of LDA this parameter had to supplied, but now can be estimated from the corpus using a burning period.  The topic modeling software used in the project performs this estimation.
 
+For notation, let $\mathbf{S}$ be a topic's sub-graph and let $\mathbf{D}_\mathbf{S}$ be the number of unique documents connected to the sub-graph with a path product above the threshold used in \texttt{Similar}().  The various metrics are stated below in these terms.
+
 \begin{align}
-\mathbf{S} & = \texttt{Story}(z_k^t) \\
-\mathbf{S} &\subset \mathbf{G} \\
 \texttt{Lifetime}(\mathbf{S}) &=\max_{z \in \mathbf{S}} \texttt{time}(z) - \min_{z \in \mathbf{S}}\texttt{time}(z) \\
 \texttt{Velocity}(\mathbf{S}) &= \frac{|\mathbf{S}|}{\Delta \text{time}} \\
-\texttt{Mass}(\mathbf{S}_{z_k^t}) &= \sum_{z \in \mathbf{S}_{z_k^t}}
+\texttt{Mass}(\mathbf{S}) & = |\mathbf{D}_\mathbf{S}| \\
+\texttt{Mass2}(\mathbf{S}) & = \sum_{z \in \mathbf{S}} \alpha_z\\
+\texttt{Momentum}(\mathbf{S}) &= \texttt{Mass}(\mathbf{S}) \times \texttt{Velocity}(\mathbf{S})
 \end{align}
 
 \section {Architecture}
@@ -156,16 +190,22 @@ The process begins with the sync stage by gathering the list of URLs for unproce
 
 The fetch stage of the processing pipeline is run after the Sync stage generates output.  This stage is responsible for downloading HTML content, extracting the relevant article content from the raw HTML, and saving the result to local disk.  Content downloading is managed by through the Apache Commons libraries.  Article extraction was originally handled by extracting text content with an HTML parser.  However, the resulting saved documents included too many artifacts of the hosting site such as advertisements, comments, and boiler plate content.  The artifacts present in the document made the topic modeling perform poorly.  To remedy this problem, a library known as ``boilerpipe`" was used to separate article content from artifact with an in-built decision tree classifier.
 
-The next stage of the pipeline performs topic modeling on the daily corpus that was created locally from the Fetch stage.  Topic modeling is handled by the ParallelTopicModel in the Mallet library.  Documents are transformed into the bag-of-word format by converting characters to lower case, removing punctuation, and splitting on whitespace.  A burn-in phase of 10 iterations is used to estimate the Dirichlet hyper-parameters. The learned topics improve qualitatively when the content is boosted by appending the a document's title 5 times.  The number of topics, K, is chosen to be half the corpus size.  This allows space for redundant themes to cluster on a single topic, but also the common situation where a topic truly has no state and may be a one time event.
+The next stage of the pipeline performs topic modeling on the daily corpus that was created locally from the Fetch stage.  Topic modeling is handled by the ParallelTopicModel in the Mallet library.  Documents are transformed into the bag-of-word format by converting characters to lower case, removing punctuation, and splitting on whitespace.  A burn-in phase of 10 iterations is used to estimate the Dirichlet hyper-parameters. The learned topics improve qualitatively when the content is boosted by appending the a document's title 5 times.  The number of topics, K, is chosen to be half the corpus size.  This allows space for redundant themes to cluster on a single topic, but also the common situation where a topic has no history and is new or one-time event.
 
-After the topic modeling has completed for the current day, edges are computed between topics of the previous days within a given window of time.  As time progresses, the total time frame a similar topic can be detected is the window of days before and after the topic date.  Similarity between topics is computed by treating the unnormalized topic-term distribution as a vector space representation and computing the cosign-similarity.  During this stage, alternative distance measures describe above are computed as well. 
+\begin{figure}[htp] \centering{
+\includegraphics[scale=0.82]{img/system-diagram.pdf}}
+\caption{Architecture Diagram: Sequential Stages}
+\end{figure}  
+
+After the topic modeling has completed for the current day, edges are computed between topics of the previous days within a given window of time.  As time progresses, the total time frame a similar topic can be detected is the window of days before and after the topic date.  Similarity between topics is computed by treating the topic-term distribution as a vector space representation and computing the cosign-similarity.  
 
 Lastly, after all the previous stages have completed the downloaded document data, topic distributions, and similarity measures are imported into a database.  After the import process completes the max date is updated so that queries may be performed agains the new, fully imported day's worth of information.  The database contains all information required by the web portal to let a user explore the data stream and answer relevant story graph queries.
+
 
 \section {Evaluation}
 
 \subsection {Popular Topics}
-Does the topic modeling work? Show samples of popular learned topics.
+Does the topic modeling work? Show samples of popular learned topics.  Possibly show impact of boosting, extraction.
 
 \subsection {Topic Topic Edges}
 Does the edge creation work?  Show samples of topic-topic edges and histogram of typical edge weight to estimate branch factor.  Discuss threshold setting.
