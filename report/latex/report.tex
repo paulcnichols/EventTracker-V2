@@ -59,6 +59,7 @@ The starting point of graph creation is corpus of documents partitioned by a tim
 
 For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ represent the documents partitioned by day.  Each individual day's sub-corpus $\mathbf{C}_t$ is a collection documents where each document $\mathbf{d}_i^t$ is in the bag-of-word format.  For the purposes of this document, superscripts are used to denote documents, topics, and distributions from a given day $t$ except when describing running times.  In this project LDA topic modeling is used to estimate from the daily corpus $\mathbf{C}_t$ the probability distributions of the the document-topic distribution, $\theta_{i,k}^t$, and topic-term distribution, $\phi_{j,k}^t$.
 
+\begin{table}
 \begin{center}
 \begin{tabular}{|l|l|}
   \hline
@@ -75,7 +76,8 @@ For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ re
   $\phi_{k,j}$ & P(Word=j $\vert$ Topic=$z_k$) \\
   \hline
 \end{tabular}
-\end{center} 
+\end{center}
+\end{table}
 
 The story graph constructed from the learned distributions follows the standard form: $\mathbf{G}$ = $(\mathbf{V}, \mathbf{E})$.  A unique feature of the story graph is that the vertices in $\mathbf{V}$ can include both the documents and the topics and follows directly from the conditional dependence graph of the LDA model.  The edges in $\mathbf{E}$ are undirected, as opposed to directed when representing conditional independence, so traversals in either direction may be performed.  
 
@@ -201,20 +203,154 @@ After the topic modeling has completed for the current day, edges are computed b
 
 Lastly, after all the previous stages have completed the downloaded document data, topic distributions, and similarity measures are imported into a database.  After the import process completes the max date is updated so that queries may be performed agains the new, fully imported day's worth of information.  The database contains all information required by the web portal to let a user explore the data stream and answer relevant story graph queries.
 
-
 \section {Evaluation}
 
 \subsection {Popular Topics}
-Does the topic modeling work? Show samples of popular learned topics.  Possibly show impact of boosting, extraction.
+The first item to confirm is that the topic modeling is effective at summarizing the relevant topics for a given day. Because LDA is an unsupervised method, the learned topics are already the best fit possible according to the optimization criteria (marginal likelihood).  Therefore, this evaluation is more qualitative than quantitative and a judgement call must be made.
 
-\subsection {Topic Topic Edges}
-Does the edge creation work?  Show samples of topic-topic edges and histogram of typical edge weight to estimate branch factor.  Discuss threshold setting.
+As mentioned previously, the first article extraction simply removed HTML content and returned text.  This naive approach left many artifacts present in the document and the learned topics matched the raw content better than the thematic content.  Examples of ``artifact" topics include topics dominated by numbers, topics dominated by terms that related to the hosting sites (such as ``CNN", ``Fox" or ``ABC"), topics related to advertisements, and topics related to comments sections.  
 
-\subsection {Topic Metrics}
-How useful are topic metrics? Show samples/summary plots of topic lifetime, velocity, and momentum
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  \multicolumn{3}{|c|}{Prominent ``Artifact" Topics} \\
+  \hline
+ 1 & comments & fox  \\
+ 5 & usa & news \\
+ 3 & today & twitter \\
+2 & news & facebook  \\
+4 & life & report  \\
+6  & comment & home  \\
+7 & blog & world  \\
+8 & travel & friends \\
+9 & sports & air \\
+romney & contact & email \\
+10 &  stories & article \\
+\hline
+\end{tabular}
+\caption*{Top terms for ``artifact" topics using naive article extraction.}
+\end{center}
+\end{table}
 
-\subsection {Document Topic Edges}
+These ``artifact" topics can be removed for the most part with more data cleaning using the ``boilerpipe" article extraction library.  However, content problems persist for new reasons such as expired links and sites hosting video content with very little content.  These ambiguous topics remain somewhat prominent.  However, in the middle range of prominence the topics learned are in fact informative and effective at summarizing a topic.  A few such examples of informative topics for a day are provided.
+
+One basic approach to further improve the learned topics is filtering by manual inspection.  The ambiguous topics reappear from day to day regularly and share almost identical distributions.  By identifying a sample of individual topics that should be excluded from display and edge creation, the same method of similarity comparison used to link topics across days can be used to suppress future topics.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  \multicolumn{3}{|c|}{Ambiguous Topics} \\
+  \hline
+page & video & external \\
+search & watch & internet \\
+close & 2012 & sites \\
+missing & 1 & 2012 \\
+found & july & network \\
+center & full & provided \\
+report & images & content \\
+visit & photo & purposes \\
+links & aug & responsible \\
+find & size & copyright \\
+public & news & ventures \\
+  \hline
+\end{tabular}
+\caption*{Top terms for ambiguous topics even after improved article extraction.}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  \multicolumn{3}{|c|}{Informative Toics} \\
+  \hline
+romney & gaza & syrian \\
+obama & benghazi & rebels \\ 
+ohio & hamas & assad \\
+campaign & walk & syria \\ 
+president & trust & aleppo \\
+ad & missiles & military \\
+state & obama &  battle \\
+mitt & dome & forces \\
+romneys & live & regime \\
+auto & holiday & weapons \\
+democratic & rohrabacher & city \\
+  \hline
+\end{tabular}
+\caption*{Top terms for informative topics that succinctly capture a topic.}
+\end{center}
+\end{table}
+
+\subsection {Query by Topic}
+The next component to evaluate is the effectiveness of computing topic similarities.  Querying the story graph by topic requires a threshold for similarity and it is not straightforward on how to set it.  Again, because the method is unsupervised there are no explicit labels for when two topics should be joined that would allow the threshold to be optimized for accuracy.   Instead the threshold must be set by a qualitative feel.
+
+Plotting the density of the cosign similarity values for one day's topics with the neighboring topics provides some clues about where to search for a threshold.  To get a sense of how topic distributions become less similar, this threshold space is sampled by comparing a starting prominent topic to a neighboring topic for each similarity range: [.9, 1], [.8, .9], [.6, .8], and [.4, .6].
+
+\begin{figure}[htp] \centering{
+\includegraphics[scale=0.3]{img/similarity.pdf}}
+\caption{Density of Topic Similarity}
+\end{figure}  
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  \multicolumn{3}{|c|}{Impact of Topic Similarity} \\
+  \multicolumn{3}{|c|}{Top ten terms of similar distributions} \\
+  \hline
+start & .9 & .8 \\
+\hline
+isaac & isaac & isaac \\
+louisiana & louisiana & lousiana \\
+hurricane & hurricane & hurricane \\
+orleans & storm &  flooded \\
+storm & orleans & baithwaite \\
+home & residents & home \\
+braithwaite & home & street \\
+residents & parish & residents \\
+plaquemines & flooded & pontchartrain \\
+flooded & mississippi & floodwaters \\
+  \hline
+\end{tabular}
+\caption*{Examination of topic similarity thresholds.}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  \multicolumn{3}{|c|}{Impact of Topic Similarity (continued)} \\
+  \multicolumn{3}{|c|}{Top ten terms of similar distributions} \\
+  \hline
+.6 & .4 & .3 \\
+\hline
+storm & haiti & fire\\
+isaac & isaac & storm\\
+hurricane & crisis & friday\\
+national & hits & officials \\
+gulf & portauprince & wednesday\\
+orleans & storm & winds\\
+coast & earthquake & center\\
+tropical & people & rain\\
+rain & topical & house \\
+winds & city & damaged\\
+  \hline
+\end{tabular}
+\caption*{Examination of topic similarity thresholds.}
+\end{center}
+\end{table}
+
+
+
+\subsection {Query by Document}
 Can the story graph find relevant document given a starting document.
+
+\subsection {Graph Metrics}
+How useful are topic metrics? Show samples/summary plots of topic lifetime, velocity, and momentum
 
 \section {Future Work}
 
