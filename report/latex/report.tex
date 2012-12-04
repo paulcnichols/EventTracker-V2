@@ -6,9 +6,10 @@
 \usepackage{framed}
 \usepackage{caption}
 \usepackage{pdfpages}
+\usepackage{bibtopic}
 %\usepackage{subfigure}
 \begin{document}
-
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
 %\begin{multicols}{2}
 \title{Storytelling Graphs}
 \author{
@@ -23,7 +24,7 @@
 
 
 \begin{abstract}
-Stream-like data sources, such as a collection of RSS feeds, can be challenging to summarize as the corpus is ever growing and the nature of the data evolves over time.  This project implements an intelligent RSS reader that leverages topic modeling to provide a high-level view of the document stream.  LDA Topic modeling is performed at daily intervals and linkages between learned topics from different days are computed to form the edges in what can be considered a ``Storytelling Graph".  This storytelling graph can be used to answer a number of contextual questions from both the perspective of a topic and a document.
+Stream-like data sources, such as a collection of RSS feeds, can be challenging to summarize as the corpus is ever growing and the nature of the data evolves over time.  This project implements a web application for managing RSS feeds.  LDA topic modeling is performed at daily intervals and linkages between learned topics from different days are computed to form the edges in what can be considered a ``Storytelling Graph".  This storytelling graph can be explored through the web application  to answer a number of contextual questions from both the perspective of a topic and a document.  
 \end{abstract}
 
 \section{Introduction}
@@ -191,14 +192,14 @@ The number of documents a given topic connects to in the sub-graph provides a no
 
 An alternative measure of size of a topic is the hyper-parameter $\alpha_k$.  In previous versions of LDA this parameter had to supplied, but now can be estimated from the corpus using a burn-in period.  The topic modeling software used in the project performs this estimation.
 
-For notation, let $\mathbf{S}$ be a topic's sub-graph and let $\mathbf{D}_\mathbf{S}$ be the number of unique documents connected to the sub-graph with a path product above the threshold used in \texttt{Similar}().  The various metrics are stated below in these terms.
+For notation, let $\mathbf{S}$ be a topic's sub-graph, let $\mathbf{D}_\mathbf{S}$ be the number of unique documents connected to the sub-graph with a path product above the threshold used in \texttt{Similar}(), and let $\mathb{\Delta}$ represent a time window.  When $\Delta$ appears in a superscript it restricts items in a set to only those within that window.  The various metrics are stated below in these terms.
 
 \begin{align}
 \texttt{Lifetime}(\mathbf{S}) &=\max_{z \in \mathbf{S}} \texttt{time}(z) - \min_{z \in \mathbf{S}}\texttt{time}(z) \\
-\texttt{Velocity}(\mathbf{S}) &= \frac{|\mathbf{S}|}{\Delta \text{time}} \\
-\texttt{Mass}(\mathbf{S}) & = |\mathbf{D}_\mathbf{S}| \\
-\texttt{Mass2}(\mathbf{S}) & = \sum_{z \in \mathbf{S}} \alpha_z\\
-\texttt{Momentum}(\mathbf{S}) &= \texttt{Mass}(\mathbf{S}) \times \texttt{Velocity}(\mathbf{S})
+\texttt{Velocity}(\mathbf{S}, \Delta) &= \frac{|\mathbf{S}^\Delta|}{|\Delta|} \\
+\texttt{Mass}(\mathbf{S}, \Delta) & = |\mathbf{D}_{\mathbf{S}^\Delta}| \\
+\texttt{Mass2}(\mathbf{S}, \Delta) & = \sum_{z \in \mathbf{S}^\Delta} \alpha_z\\
+\texttt{Momentum}(\mathbf{S}, \Delta) &= \texttt{Mass}(\mathbf{S}, \Delta) \times \texttt{Velocity}(\mathbf{S}, \Delta)
 \end{align}
 
 \section {Implementation}
@@ -223,8 +224,20 @@ Lastly, after all the previous stages have completed, the downloaded document da
 \subsection {Web Application}
 To emphasize the importance of time, the web application renders a tabular view of the top 10 terms for each topic over a 7 day period.  Topics are sorted by top to bottom by a (non-scientific) weighted sum of the connection strength with neighboring topics by mass.  The top 10 words of each distribution is shown to give the user an understanding of the topic.  Users may ``drill-down" into a topic that is interesting to view the subgraph of that topic.  This ``drill-down" view is another tabular view by day of the both the topics, and the linked titles of the articles belonging to the topic.
 
- 
-The web application is built around the standard Model View Controller paradigm whereby the business logic to query the database is separated from the presentation logic.
+\begin{figure}
+\centering
+\includegraphics[scale=0.3]{img/story-all.png}
+\caption{Screen shot of web application in browsing mode.  A summary of the terms for prominent topics are displayed for each day.  Topics with the most connections between other topics are displayed higher.}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.3]{img/story-view.png}
+\caption{Screen shot of web application in ``drill-down" mode. The links and titles of the relevant documents for a story are shown by day.  The number 1851 is the topic ID.}
+\end{figure}
+
+The web application is built around the standard Model-View-Controller paradigm whereby the business logic to query the database is separated from the presentation logic.  The technology stack consists of popular HTML5 and JavaScript frameworks such as Bootstrap, JQuery in the View, a MySQL database as the Model, and the Dancer framework in Perl providing the Controller.  To make rendering information fast, a caching layer provided by Memcache is placed between the View and Model to save results for common queries such as the weighted topics by day and popular sub-graph requests.
 
 \section {Evaluation}
 
@@ -258,45 +271,22 @@ romney & contact & email & find & size & copyright \\
 
 These ``artifact" topics can be removed for the most part with more data cleaning using the ``boilerpipe" article extraction library.  However, content problems persist for new reasons such as expired links and sites hosting video content with very little content.  These ambiguous topics remain somewhat prominent.  However, in the middle range of prominence the topics learned are in fact informative and effective at summarizing a topic.  A few such examples of informative topics for a day are provided.
 
-One basic approach to further improve the learned topics is filtering by manual inspection.  The ambiguous topics reappear from day to day regularly and share almost identical distributions.  By identifying a sample of individual topics that should be excluded from display and edge creation, the same method of similarity comparison used to link topics across days can be used to suppress future topics.
+One basic approach to further improve the learned topics is filtering by manual inspection.  The ambiguous topics reappear from day to day regularly and share almost identical distributions.  By identifying a sample of individual topics that should be excluded from display and edge creation, the same method of similarity comparison used to link topics across days can be used to suppress future topics.  This approach is used in the web application with good success.
 
-
-\begin{table}
-\begin{center}
-\begin{tabular}{|l|l|l|}
-  \hline
-  \multicolumn{3}{|c|}{Informative Topics} \\
-  \hline
-romney & gaza & syrian \\
-obama & benghazi & rebels \\ 
-ohio & hamas & assad \\
-campaign & walk & syria \\ 
-president & trust & aleppo \\
-ad & missiles & military \\
-state & obama &  battle \\
-mitt & dome & forces \\
-romneys & live & regime \\
-auto & holiday & weapons \\
-democratic & rohrabacher & city \\
-  \hline
-\end{tabular}
-\caption*{Top terms for informative topics that succinctly capture a topic.}
-\end{center}
-\end{table}
 
 \subsection {Query by Topic}
 The next component to evaluate is the effectiveness of computing topic similarities.  Querying the storytelling graph by topic requires a threshold for similarity that not straightforward to set.  Again, because the method is unsupervised there are no explicit labels for when two topics should be joined that would allow the threshold to be optimized for accuracy.   Instead the threshold must be set by a qualitative feel.
 
 Plotting the density of the cosign similarity values for one day's topics with the neighboring topics provides some clues about where to search for a threshold.  The density plot of the all topic similarities for one day reveal that the vast majority are near 0.  Zooming in further to only similarities above .3 reveals a slightly more interesting structure.  A surprising number of similarities are very near 1, a perfect match.  Upon inspection these topics were found to be further ``artifact" topics and will be suppressed manually as described above.
 
-To get a sense of how topic distributions become less similar, this zoomed in threshold space is sampled by comparing a starting prominent topic to a neighboring topic for each similarity range: [.9, 1], [.8, .9], [.6, .8], [.4, .6], and [.3, .4].
+To get a sense of how topic distributions become less similar, this zoomed in threshold space is sampled by comparing a starting prominent topic to a neighboring topic for each similarity range: [.9, 1], [.8, .9], [.6, .8], [.4, .6], and [.3, .4]. The sampled distributions of increasingly lower similarity show qualitatively that a good threshold is likely somewhere between .6 and .4.  Though the example with Hurricane Isaac is but a single instance, similar behavior is observed generally. At the lowest value in this range the neighboring topic begins to really diverge.  However, tolerance to noise can be left as a parameter to the user. 
 
    
 \begin{figure}
 \centering
 \mbox{\subfigure{\includegraphics[scale=0.22]{img/similarity-all.pdf}}
 \subfigure{\includegraphics[scale=0.22]{img/similarity.pdf}}}
-\caption{Density of topic similarity (left), and density of topic similarity greater than .3 (right)}
+\caption{Density of topic similarity (left), and density of topic similarity greater than .3 (right).  Nearly all cosign similarity values between topics are near 0, suggesting that even a low threshold of .3 has a large margin before it becomes too noisy.}
 \end{figure}
 
 \begin{table}
@@ -304,7 +294,7 @@ To get a sense of how topic distributions become less similar, this zoomed in th
 \begin{tabular}{|l|l|l|l|l|l|}
   \hline
   \multicolumn{6}{|c|}{Impact of Topic Similarity} \\
-  \multicolumn{6}{|c|}{Top ten terms of similar distributions from different days} \\
+  \multicolumn{6}{|c|}{Top ten terms of similar distributions of decreasing similarity} \\
   \hline
 \texttt{start} & \texttt{.9} & \texttt{.8} & \texttt{.6} & \texttt{.4} & \texttt{.3}\\
 \hline
@@ -320,31 +310,135 @@ plaquemines & flooded & pontchartrain & rain & topical & house\\
 flooded & mississippi & floodwaters & winds & city & damaged\\
   \hline
 \end{tabular}
-\caption*{Examination of topic similarity thresholds.}
+\caption{Examination of topic similarity thresholds related to Hurricane Isaac.  At the lower end of similarity (.3 and .4), the topics appear to be more about general weather than Hurricane Isaac. }
 \end{center}
 \end{table}
 
-The sampled distributions of increasingly lower similarity show qualitatively that a good threshold is likely somewhere between .6 and .4.  Though only one example of many possible is shown, similar behavior is observed generally. At the lowest value in this range the neighboring topic begins to really diverge. 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|}
+  \hline
+  \multicolumn{5}{|c|}{Example of evolving story from topic perspective} \\
+  \hline
+  \textbf{09-12}&\textbf{09-13}&\textbf{09-14}&\textbf{09-15}&\textbf{09-16}\\
+  \hline
+teachers & school & teachers & teachers & teachers \\
+chicago & teachers & school &  union & chicago \\
+\textbf{strike} &  \textbf{strike} & union & chicago & union \\
+unions &  chicago & chicago & school & school \\
+schools & union &   \textbf{strike} & strike & strike \\
+public & children &  children & schools & schools \\
+school & students & board &   \textbf{deal} &   \textbf{contract} \\
+union & district & kids & students &  \textbf{emanuel} \\
+students & schools & day & rally & \textbf{delegates} \\
+teacher &  kids & students & teacher & \textbf{lewis} \\
+\hline
+\end{tabular}
+\caption{Example from topic perspective of evolving story between September 12-16th about Chicago teachers striking.  The story moves towards the conclusion with the union representative Karen Lewis negotiating a deal with Mayor Rahm Emanual. }
+\end{center}
+\end{table}
 
 \subsection {Query by Document}
-Show examples of querying by document.  Given metrics of similarity on returned documents for the 3 datasets.
+
+Querying by document involves first gathering the prominent topics for a given document and then tracing through the topic-topic edges back down to another document.  The topic in this case is used as a proxy to the document's actual content.  This leads to the unusual problem where two documents can be similar topic-wise but less similar by their raw content.  To quantify the performance of the indirect nature of querying by document, the method is compared to simple cosign similarity between two documents.  
+
+\begin{figure}
+\centering
+\mbox{
+\subfigure{\includegraphics[scale=0.14]{img/news-wcss.pdf}}
+\subfigure{\includegraphics[scale=0.14]{img/business-wcss.pdf}
+\subfigure{\includegraphics[scale=0.14]{img/sports-wcss.pdf}}}
+}
+\caption{Histograms of the difference in WCSS between document queries using simple document similarity and the storytelling graph.  Positive values indicate the storytelling graph produced a smaller WCSS and more coherent neighbors (good results).  }
+\end{figure}
+
+The method for comparison involves sampling documents from the three different datasets over a two week period and pulling back their most relevant neighbors.   Document similarity is restricted to pairs higher than .45 to provide comparable noise reduction to the thresholds in the storytelling graph.  The returned documents are evaluated as a cluster by the within cluster sum of squares criteria on the vector space representation.  
+
+\begin{align}
+WCSS = \sum_{i\in\textbf{D}_\textbf{S}}\sum_{j}^M \|w_{i,j} - \mu_j\|^2
+\end{align}
+
+The formula above shows the calculation for WCSS where $\mu$ is the mean term vector computed by taking the average word count across each document.  Though what defines a good or bad value for WCSS is subjective, a bad result from this test would be neighboring documents returned by the storytelling graph that are wildly divergent from each other in comparison to document similarity, a relatively naive method.  Highly divergent document peers occur when low document-topic thresholds are used. For thresholds of .6 and .15 for topic similarity and document-topic weighting, the WCSS value is frequently lower depending on the dataset. It follows from the topic modeling that the storytelling graph has the potential to perform better because neighbors are chosen from a learned similar group, but this is not guaranteed.  
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|}
+  \hline
+  Example querying the storytelling graph by document starting from: \\
+  \quad ``U.S. ambassador killed in Libya" \\
+  \hline
+\textbf{09-12} \\
+\hline
+How the Benghazi attack unfolded \\
+Envoy to Libya dies in rocket blast \\
+U.S. vows to hunt down ambassador's killers \\
+U.S. ambassador killed in Libya \\
+\hline
+\textbf{09-13} \\ 
+\hline
+Inside the attack in Benghazi \\
+How the deadly attack in Benghazi unfolded \\
+U.S. warships move toward Libya \\
+Benghazi casualties \\
+\hline
+\textbf{09-14}\\
+\hline
+Opinion: Some 'don't get dissent' \\
+President Obama, Secretary Clinton Receive Bodies Of Americans Killed In Libya \\
+4 held in Libya attack \\
+\hline
+\end{tabular}
+\caption{Example of similar documents returned using storytelling graph starting from the document ``U.S. ambassador killed in Libya".  The documents are clearly related. }
+\end{center}
+\end{table} 
 
 \subsection {Graph Metrics}
 
-Using the estimated thresholds of .6 for the topic similarity threshold and .15 for document-topic threshold, three prominent stories found during the middle of the corpus (2012-09-01) are queried with the resulting subgraphs' documents plotted by day.  These stories happen to be related to President Obama's reelection campaign, turmoil in Gaza, and Hurricane Irene.  The Obama and Gaza topics are fairly enduring in this dataset so they remain steady.  The hurricane, however, was a more isolated event which began August 21, 2012 and ended September 1, 2012.  The storytelling graph accurately captures this lifetime. 
+The final item presented for evaluation are the metrics on a storytelling graph.  These metrics provide a quantitive way to compare subgraphs for different topics. The lifetime and mass of a story are somewhat trivial, so they are evaluated indirectly through their use in momentum.  However, it should be noted that using the estimated Dirichlet priors to represent topic mass can be advantageous over the thresholded document count as the document count can be zero when other, more prominent topics squeeze the topic weight in question below the threshold.  The issue arises due to the restriction that probability distributions must sum to 1.
+
+Velocity of the topic is intentionally separated from its mass to distinguish between how often a topic arrises from how prominent a topic is.  The calculation of momentum assumes a time window and for this project a window of 7 days is used.  The table below shows example topics for a single day sorted by momentum.  The metrics correctly increase the importance temporarily of a story with low velocity but a high mass such as the topics related to a kidnapping and a party bus full of teens overturning.
+
+Lastly, three prominent stories found during the middle of the corpus (2012-09-01) are queried with the resulting subgraphs' documents plotted by day.  These stories happen to be related to President Obama's re-election campaign, turmoil in Gaza, and Hurricane Irene.  The Obama and Gaza topics are fairly enduring in this dataset so they remain steady.  The hurricane, however, was a more isolated event which began August 21, 2012 and ended September 1, 2012.  In all three cases the momentum metric of the storytelling graph accurately captures lifetime. 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\multicolumn{5}{|c|}{Most prominent topics by Momentum on 2012-09-01} \\
+\hline
+Mass & Mass_\alpha & Velocity & Momentum & Topic\\
+\hline
+244 & 0.634 & 9.0 & 2196.0 &romney obama president republican mitt campaign \\
+\hline
+128 & 0.163 & 8.857 & 1133.714 & gaza benghazi hamas dogs missiles obama dome walk\\
+\hline
+93 & 0.170 & 2.286 & 212.571429 & isaac louisiana hurricane storm orleans home residents\\
+\hline
+9 & 0.029 & 0.571 & 5.143 & state penn football coach campus sandusky paterno\\
+\hline
+11 & 0.200 & 0.286 & 3.143 & syrian government syria damascus rebels violence \\ 
+\hline
+6 & 0.015 & 0.429 & 2.571 & police officers car henderson kidnapped arrested duran \\
+\hline
+8 & 0.020 & 0.286 & 2.286 & bus party fernandez 16 head hospital teens overpass \\
+\hline
+\end{tabular}
+\caption{View of prominent stories by momentum for a given day (2012-09-01).  The momentum weighting provide an balanced view of import topics at a given point in time. }
+\end{center}
+\end{table}
 
 \begin{figure}
 \centering
 \mbox{\subfigure{\includegraphics[scale=0.22]{img/story-time.pdf}}
 \subfigure{\includegraphics[scale=0.22]{img/momentum-3.pdf}}}
-\caption{Documents by story over time (left), Momentum by story over time (right).  The log(momentum) view offers a smoother curve that gives a more visually intuitive understanding of the story's prominence. }
+\caption{Document count by story over time (left) and Momentum by story over time (right).  The log(momentum) view offers a smoother curve that gives a more visually intuitive understanding of the change in a story's prominence over time. }
 \end{figure}
 
-Another view 
-How useful are topic metrics? Show samples/summary plots of topic lifetime, velocity, and momentum
+\section {Conclusion and Future Work}
 
-\section {Future Work}
+This project implements a web application to explore RSS feeds and display information in such a way that emphasizes time and the connectedness of topics.  To accomplish this goal, a storytelling graph was introduced created from LDA topic modeling at daily intervals.  The web applications allows exploring a data stream both from the perspective of an abstract topic and and a concrete document.  Both modes of operation follow directly from the queries possible on the story graph.  Metrics on the storytelling graph are introduced to further prioritize topics and supply quantitive methods to evaluate the prominence of a story.
 
-Talk about how given more time, the world could be saved.
+Future improvements might include enhancements to article extraction and data cleaning, integration with natural language processing (NLP) techniques to identify actors and agents present in topics, and further display improvements to the front end.  Proper article extraction proved paramount, and yet artifact and ambiguous topics remain that need be suppressed.  It is likely that further data cleaning methods can still improve upon this issue.  NLP named entity extraction was considered, but time did not permit a full integration.  Identifying entities in documents would further enhance the presentation of an evolving story.  Lastly, further visualization efforts the storytelling graph and the metrics can improve the user experience.  
 
 \end{document}

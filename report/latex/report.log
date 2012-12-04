@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  2 DEC 2012 18:06
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  4 DEC 2012 10:23
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -203,37 +203,45 @@ File: pppdftex.def 2011/03/10 v0.4n Pdfpages driver for pdfTeX (AM)
 \c@AM@survey=\count104
 \AM@templatesizebox=\box29
 )
+(/usr/local/texlive/2011/texmf-dist/tex/latex/bibtopic/bibtopic.sty
+Package: bibtopic 2006/09/08 v1.1a Sectioned Bibliographies
+\c@btauxfile=\count105
+\bt@infilea=\read1
+\bt@infileb=\read2
+\bt@outfile=\write3
+\bt@tempboxa=\box30
+)
 (./report.aux)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
-\AtBeginShipoutBox=\box30
+\AtBeginShipoutBox=\box31
 
 (/usr/local/texlive/2011/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count105
+\scratchcounter=\count106
 \scratchdimen=\dimen126
-\scratchbox=\box31
-\nofMPsegments=\count106
-\nofMParguments=\count107
+\scratchbox=\box32
+\nofMPsegments=\count107
+\nofMParguments=\count108
 \everyMPshowfont=\toks21
-\MPscratchCnt=\count108
+\MPscratchCnt=\count109
 \MPscratchDim=\dimen127
-\MPnumerator=\count109
-\makeMPintoPDFobject=\count110
+\MPnumerator=\count110
+\makeMPintoPDFobject=\count111
 \everyMPtoPDFconversion=\toks22
 ) (/usr/local/texlive/2011/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
 Package: pdftexcmds 2011/04/22 v0.16 Utilities of pdfTeX for LuaTeX (HO)
@@ -281,13 +289,13 @@ e
 [1
 
 {/usr/local/texlive/2011/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 39.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 40.
 
 (/usr/local/texlive/2011/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 39.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 40.
  [2] [3]
 
 pdfTeX warning: /usr/texbin/pdflatex (file ./img/story-graph.pdf): PDF inclusio
@@ -295,18 +303,18 @@ n: found PDF version <1.7>, but at most version <1.5> allowed
 <img/story-graph.pdf, id=20, 289.08pt x 213.79875pt>
 File: img/story-graph.pdf Graphic file (type pdf)
  <use img/story-graph.pdf>
-Package pdftex.def Info: img/story-graph.pdf used on input line 67.
+Package pdftex.def Info: img/story-graph.pdf used on input line 68.
 (pdftex.def)             Requested size: 237.04712pt x 175.3161pt.
 
 [4 <./img/story-graph.pdf>] [5]
 
-./report.tex:146: Package caption Error: No float type 'alltt' defined.
+./report.tex:147: Package caption Error: No float type 'alltt' defined.
 
 See the caption package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.146 \captionof{alltt}
+l.147 \captionof{alltt}
                        {Algorithm topic sub-graph of topic $z_k^t$}
 If you do not understand this error, please take a closer look
 at the documentation of the `caption' package, especially the
@@ -315,13 +323,13 @@ Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
 
-./report.tex:146: Package caption Error: \caption outside float.
+./report.tex:147: Package caption Error: \caption outside float.
 
 See the caption package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.146 \captionof{alltt}
+l.147 \captionof{alltt}
                        {Algorithm topic sub-graph of topic $z_k^t$}
 If you do not understand this error, please take a closer look
 at the documentation of the `caption' package, especially the
@@ -331,13 +339,13 @@ If that doesn't work, type  X <return>  to quit.
 
 [6]
 
-./report.tex:180: Package caption Error: No float type 'alltt' defined.
+./report.tex:181: Package caption Error: No float type 'alltt' defined.
 
 See the caption package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.180 \captionof{alltt}
+l.181 \captionof{alltt}
                        {Algorithm for relevant documents $d_i^t$}
 If you do not understand this error, please take a closer look
 at the documentation of the `caption' package, especially the
@@ -346,13 +354,13 @@ Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
 
-./report.tex:180: Package caption Error: \caption outside float.
+./report.tex:181: Package caption Error: \caption outside float.
 
 See the caption package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.180 \captionof{alltt}
+l.181 \captionof{alltt}
                        {Algorithm for relevant documents $d_i^t$}
 If you do not understand this error, please take a closer look
 at the documentation of the `caption' package, especially the
@@ -361,7 +369,19 @@ Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
 [7]
-Overfull \hbox (0.5828pt too wide) in paragraph at lines 208--209
+./report.tex:195: Undefined control sequence.
+<recently read> \mathb 
+                       
+l.195 ...ed in \texttt{Similar}(), and let $\mathb
+                                                  {\Delta}$ represent a time...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (0.5828pt too wide) in paragraph at lines 209--210
 \OT1/cmr/m/n/10 (GRAPI). The GRAPI nor-mal-izes the many quirks and for-mat-tin
 g is-sues present
  []
@@ -370,17 +390,45 @@ g is-sues present
 
 pdfTeX warning: /usr/texbin/pdflatex (file ./img/system-diagram.pdf): PDF inclu
 sion: found PDF version <1.7>, but at most version <1.5> allowed
-<img/system-diagram.pdf, id=115, 289.08pt x 213.79875pt>
+<img/system-diagram.pdf, id=116, 289.08pt x 213.79875pt>
 File: img/system-diagram.pdf Graphic file (type pdf)
 
 <use img/system-diagram.pdf>
-Package pdftex.def Info: img/system-diagram.pdf used on input line 215.
+Package pdftex.def Info: img/system-diagram.pdf used on input line 216.
 (pdftex.def)             Requested size: 237.04712pt x 175.3161pt.
- [9 <./img/system-diagram.pdf>] [10] [11]
-./report.tex:298: Undefined control sequence.
+ [9 <./img/system-diagram.pdf>]
+<img/story-all.png, id=174, 1209.51875pt x 633.36626pt>
+File: img/story-all.png Graphic file (type png)
+
+<use img/story-all.png>
+Package pdftex.def Info: img/story-all.png used on input line 229.
+(pdftex.def)             Requested size: 362.85843pt x 190.01134pt.
+
+Overfull \hbox (17.85843pt too wide) in paragraph at lines 229--230
+ [][] 
+ []
+
+<img/story-view.png, id=175, 1208.515pt x 688.5725pt>
+File: img/story-view.png Graphic file (type png)
+ <use img/story-view.png>
+Package pdftex.def Info: img/story-view.png used on input line 236.
+(pdftex.def)             Requested size: 362.5573pt x 206.57333pt.
+
+Overfull \hbox (17.5573pt too wide) in paragraph at lines 236--237
+ [][] 
+ []
+
+
+Overfull \hbox (6.41624pt too wide) in paragraph at lines 240--241
+\OT1/cmr/m/n/10 JavaScript frame-works such as Boot-strap, JQuery in the View, 
+a MySQL database
+ []
+
+[10 <./img/story-all.png>] [11 <./img/story-view.png>] [12]
+./report.tex:288: Undefined control sequence.
 <argument> \subfigure 
                       {\includegraphics [scale=0.22]{img/similarity-all.pdf}...
-l.298 ...raphics[scale=0.22]{img/similarity.pdf}}}
+l.288 ...raphics[scale=0.22]{img/similarity.pdf}}}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -388,17 +436,17 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-<img/similarity-all.pdf, id=179, 794.97pt x 614.295pt>
+<img/similarity-all.pdf, id=185, 794.97pt x 614.295pt>
 File: img/similarity-all.pdf Graphic file (type pdf)
 
 <use img/similarity-all.pdf>
-Package pdftex.def Info: img/similarity-all.pdf used on input line 298.
+Package pdftex.def Info: img/similarity-all.pdf used on input line 288.
 (pdftex.def)             Requested size: 174.89394pt x 135.14531pt.
 
-./report.tex:298: Undefined control sequence.
+./report.tex:288: Undefined control sequence.
 <argument> ...img/similarity-all.pdf}} \subfigure 
                                                   {\includegraphics [scale=0...
-l.298 ...raphics[scale=0.22]{img/similarity.pdf}}}
+l.288 ...raphics[scale=0.22]{img/similarity.pdf}}}
                                                   
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -406,91 +454,197 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-<img/similarity.pdf, id=180, 794.97pt x 614.295pt>
+<img/similarity.pdf, id=186, 794.97pt x 614.295pt>
 File: img/similarity.pdf Graphic file (type pdf)
  <use img/similarity.pdf>
-Package pdftex.def Info: img/similarity.pdf used on input line 298.
+Package pdftex.def Info: img/similarity.pdf used on input line 288.
 (pdftex.def)             Requested size: 174.89394pt x 135.14531pt.
 
-Overfull \hbox (8.1212pt too wide) in paragraph at lines 298--299
+Overfull \hbox (8.1212pt too wide) in paragraph at lines 288--289
  [][] 
  []
 
 
-Overfull \hbox (30.00072pt too wide) in paragraph at lines 304--323
+Overfull \hbox (30.00072pt too wide) in paragraph at lines 294--313
  [] 
  []
 
-[12 <./img/similarity-all.pdf> <./img/similarity.pdf>]
-./report.tex:339: Undefined control sequence.
-<argument> \subfigure 
-                      {\includegraphics [scale=0.22]{img/story-time.pdf}} \s...
-l.339 ...raphics[scale=0.22]{img/momentum-3.pdf}}}
-                                                  
+./report.tex:352: Undefined control sequence.
+<argument>  \subfigure 
+                       {\includegraphics [scale=0.14]{img/news-wcss.pdf}} \s...
+l.352 }
+       
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-<img/story-time.pdf, id=196, 794.97pt x 614.295pt>
-File: img/story-time.pdf Graphic file (type pdf)
- <use img/story-time.pdf>
-Package pdftex.def Info: img/story-time.pdf used on input line 339.
-(pdftex.def)             Requested size: 174.89394pt x 135.14531pt.
+<img/news-wcss.pdf, id=187, 794.97pt x 614.295pt>
+File: img/news-wcss.pdf Graphic file (type pdf)
+ <use img/news-wcss.pdf>
+Package pdftex.def Info: img/news-wcss.pdf used on input line 352.
+(pdftex.def)             Requested size: 111.29503pt x 86.0007pt.
 
-./report.tex:339: Undefined control sequence.
-<argument> ...22]{img/story-time.pdf}} \subfigure 
+./report.tex:352: Undefined control sequence.
+<argument> ....14]{img/news-wcss.pdf}} \subfigure 
                                                   {\includegraphics [scale=0...
-l.339 ...raphics[scale=0.22]{img/momentum-3.pdf}}}
-                                                  
+l.352 }
+       
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-<img/momentum-3.pdf, id=197, 794.97pt x 614.295pt>
-File: img/momentum-3.pdf Graphic file (type pdf)
- <use img/momentum-3.pdf>
-Package pdftex.def Info: img/momentum-3.pdf used on input line 339.
-(pdftex.def)             Requested size: 174.89394pt x 135.14531pt.
+<img/business-wcss.pdf, id=188, 794.97pt x 614.295pt>
+File: img/business-wcss.pdf Graphic file (type pdf)
 
-Overfull \hbox (8.1212pt too wide) in paragraph at lines 339--340
+<use img/business-wcss.pdf>
+Package pdftex.def Info: img/business-wcss.pdf used on input line 352.
+(pdftex.def)             Requested size: 111.29503pt x 86.0007pt.
+
+./report.tex:352: Undefined control sequence.
+<argument> ...]{img/business-wcss.pdf} \subfigure 
+                                                  {\includegraphics [scale=0...
+l.352 }
+       
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+<img/sports-wcss.pdf, id=189, 794.97pt x 614.295pt>
+File: img/sports-wcss.pdf Graphic file (type pdf)
+ <use img/sports-wcss.pdf>
+Package pdftex.def Info: img/sports-wcss.pdf used on input line 352.
+(pdftex.def)             Requested size: 111.29503pt x 86.0007pt.
+
+Overfull \hbox (2.2184pt too wide) in paragraph at lines 352--353
  [][] 
  []
 
-[13] [14 <./img/story-time.pdf> <./img/momentum-3.pdf>] (./report.aux) ) 
+[13 <./img/similarity-all.pdf> <./img/similarity.pdf>] [14]
+Overfull \hbox (27.5562pt too wide) in paragraph at lines 366--392
+ [] 
+ []
+
+[15 <./img/news-wcss.pdf> <./img/business-wcss.pdf> <./img/sports-wcss.pdf>]
+./report.tex:410: Missing $ inserted.
+<inserted text> 
+                $
+l.410 Mass & Mass_
+                  \alpha & Velocity & Momentum & Topic\\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+./report.tex:410: Extra }, or forgotten $.
+<template> \unskip \hfil }
+                          \hskip \tabcolsep \hskip -.5\arrayrulewidth \vrule...
+l.410 Mass & Mass_\alpha &
+                           Velocity & Momentum & Topic\\
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+./report.tex:410: Missing $ inserted.
+<inserted text> 
+                $
+l.410 Mass & Mass_\alpha &
+                           Velocity & Momentum & Topic\\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+./report.tex:410: Missing } inserted.
+<inserted text> 
+                }
+l.410 Mass & Mass_\alpha &
+                           Velocity & Momentum & Topic\\
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+
+Overfull \hbox (89.03285pt too wide) in paragraph at lines 406--427
+ [] 
+ []
+
+./report.tex:434: Undefined control sequence.
+<argument> \subfigure 
+                      {\includegraphics [scale=0.22]{img/story-time.pdf}} \s...
+l.434 ...raphics[scale=0.22]{img/momentum-3.pdf}}}
+                                                  
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+<img/story-time.pdf, id=231, 794.97pt x 614.295pt>
+File: img/story-time.pdf Graphic file (type pdf)
+ <use img/story-time.pdf>
+Package pdftex.def Info: img/story-time.pdf used on input line 434.
+(pdftex.def)             Requested size: 174.89394pt x 135.14531pt.
+
+./report.tex:434: Undefined control sequence.
+<argument> ...22]{img/story-time.pdf}} \subfigure 
+                                                  {\includegraphics [scale=0...
+l.434 ...raphics[scale=0.22]{img/momentum-3.pdf}}}
+                                                  
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+<img/momentum-3.pdf, id=232, 794.97pt x 614.295pt>
+File: img/momentum-3.pdf Graphic file (type pdf)
+ <use img/momentum-3.pdf>
+Package pdftex.def Info: img/momentum-3.pdf used on input line 434.
+(pdftex.def)             Requested size: 174.89394pt x 135.14531pt.
+
+Overfull \hbox (8.1212pt too wide) in paragraph at lines 434--435
+ [][] 
+ []
+
+[16] [17 <./img/story-time.pdf> <./img/momentum-3.pdf>] [18] (./report.aux) ) 
 Here is how much of TeX's memory you used:
- 4323 strings out of 493633
- 63725 string characters out of 3143378
- 139083 words of memory out of 3000000
- 7559 multiletter control sequences out of 15000+200000
+ 4619 strings out of 493633
+ 67962 string characters out of 3143378
+ 150146 words of memory out of 3000000
+ 7845 multiletter control sequences out of 15000+200000
  11099 words of font info for 41 fonts, out of 3000000 for 9000
  831 hyphenation exceptions out of 8191
  38i,19n,39p,963b,315s stack positions out of 5000i,500n,10000p,200000b,50000s
-</usr/l
-ocal/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/lo
-cal/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/loc
-al/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/local
-/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/t
-exlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/te
-xlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/tex
-live/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texli
-ve/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive
-/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2
-011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/201
-1/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2011/
+</
+usr/local/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></u
+sr/local/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></us
+r/local/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx5.pfb></usr/
+local/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/lo
+cal/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/loca
+l/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local
+/texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/
+texlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/te
+xlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texl
+ive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texliv
+e/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/
+2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/20
+11/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2011/
 texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2011/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2011/texmf-
 dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2011/texmf-d
 ist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/local/texlive/2011/texmf-dis
 t/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2011/texmf-dist/
 fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on report.pdf (14 pages, 273336 bytes).
+Output written on report.pdf (18 pages, 523887 bytes).
 PDF statistics:
- 272 PDF objects out of 1000 (max. 8388607)
- 226 compressed objects within 3 object streams
+ 315 PDF objects out of 1000 (max. 8388607)
+ 255 compressed objects within 3 object streams
  0 named destinations out of 1000 (max. 500000)
- 31 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 56 words of extra memory for PDF output out of 10000 (max. 10000000)
 

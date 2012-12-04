@@ -36,12 +36,12 @@ sub get_topic_weights {
     # get topic weights by sum of similarities with other topics
     my $sth = database->prepare(qq|select id, sum(cosign_similarity) as weight
                                     from (
-                                      select t.id, cosign_similarity 
+                                      select t.id, cosign_similarity -- *alpha as weight
                                       from topic t
                                       join topic_similarity_all ts on (t.id = topic_a)
                                       where dataset_id = $dataset_id and date = '$date'
                                     union
-                                      select t.id, cosign_similarity
+                                      select t.id, cosign_similarity -- *alpha as weight
                                       from topic t
                                       join topic_similarity_all ts on (t.id = topic_b)
                                       where dataset_id = $dataset_id and date = '$date'
@@ -70,7 +70,8 @@ sub get_topics_by_date {
     # get the top 5 topics
     my $sth = database->prepare(qq|select id as topic_id, alpha
                                    from topic t
-                                   where dataset_id = $dataset_id and date = '$date'|);
+                                   where dataset_id = $dataset_id and date = '$date' and
+                                    id not in (select topic_id from topic_prune)|);
     $sth->execute();
     $topics = {};
     while (my $t = $sth->fetchrow_hashref()) {
@@ -138,21 +139,50 @@ sub get_similar_topics {
   my $sim_topic_k = "similar-topics-$topic";
   my $sim_topic = $cache->get($sim_topic_k);
   if (!$sim_topic) {
-    my $sth = database->prepare(qq|
-                      select
-                        if(a.id = $topic, b.id, a.id) as id,
-                        if(a.id = $topic, b.date, a.date) as date,
-                        cosign_similarity as weight
-                      from topic_similarity
-                      join topic a on (topic_a = a.id)
-                      join topic b on (topic_b = b.id) 
-                      where topic_a = $topic or topic_b = $topic
-                      order by date asc|);
-    $sth->execute();
+    #my $sth = database->prepare(qq|
+    #                  select
+    #                    if(a.id = $topic, b.id, a.id) as id,
+    #                    if(a.id = $topic, b.date, a.date) as date,
+    #                    cosign_similarity as weight
+    #                  from topic_similarity
+    #                  join topic a on (topic_a = a.id)
+    #                  join topic b on (topic_b = b.id) 
+    #                  where topic_a = $topic or topic_b = $topic
+    #                  order by date asc|);
+    #$sth->execute();
+    #$sim_topic = [];
+    #while (my $t = $sth->fetchrow_hashref()) {
+    #  push @$sim_topic, $t;
+    #}
+    #$cache->set($sim_topic_k, $sim_topic);
+    my $topic_neighbors = database->prepare(qq|
+                            select *,
+                              ta.date as a_date, tb.date as b_date,
+                              ta.alpha as a_alpha, tb.alpha as b_alpha
+                            from topic_similarity
+                            join topic ta on (topic_a = ta.id)
+                            join topic tb on (topic_b = tb.id)
+                            where topic_a = ? or topic_b = ?|);
+    my $topic_info = database->selectall_arrayref(qq|select date, alpha from topic where id = $topic|)->[0];
+    my $frontier = [{id=>$topic, weight=>1, date => $topic_info->[0], alpha=>$topic_info->[1]}];
+    my $visited = {$topic=>1};
     $sim_topic = [];
-    while (my $t = $sth->fetchrow_hashref()) {
-      push @$sim_topic, $t;
+    while (scalar(@$frontier)) {
+      my $v = shift @$frontier;
+      push @$sim_topic, $v;
+      $topic_neighbors->execute($v->{id}, $v->{id});
+      while (my $n = $topic_neighbors->fetchrow_hashref()) {
+        my $nt = $n->{topic_a} == $v->{id} ? $n->{topic_b} : $n->{topic_a};
+        my $date = $n->{topic_a} == $v->{id} ? $n->{b_date} : $n->{a_date};
+        my $alpha = $n->{topic_a} == $v->{id} ? $n->{b_alpha} : $n->{a_alpha};
+        my $w = $n->{cosign_similarity}*$v->{weight};
+        if ($w > .6 and !$visited->{$nt}) {
+          push @$frontier, {id=>$nt, weight=>$w, date=>$date, alpha=>$alpha};
+          $visited->{$nt} = 1;
+        }
+      }
     }
+    $sim_topic = [sort {$a->{date} cmp $b->{date}} @$sim_topic];
     $cache->set($sim_topic_k, $sim_topic);
   }
   return $sim_topic;
@@ -206,10 +236,6 @@ sub do_topic {
     # get dates to choose from
     my $dates = get_dates($dataset_id);
     
-    # get current topic
-    my $current = database->quick_select('topic', {id=>$topic});
-    $current->{weight} = 1.0;
-    
     # get similar topics
     my $similar_topics = get_similar_topics($topic);
     
@@ -217,9 +243,6 @@ sub do_topic {
     $neighbors = [];
     for my $d (@$dates) {
       push @$neighbors, {date => $d, topics=>[]};
-      if ($d eq $current->{date}) {
-        push @{$neighbors->[-1]->{topics}}, $current;
-      }
       
       while (scalar(@$similar_topics) and $similar_topics->[0]->{date} eq $d) {
         my $t = shift @$similar_topics;

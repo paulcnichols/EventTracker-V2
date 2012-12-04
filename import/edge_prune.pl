@@ -42,13 +42,67 @@ my $dataset_id = $dbh->selectall_arrayref(qq|
                         from dataset
                         where name = '$config->{name}'|)->[0]->[0] or error("No such dataset");
 
-my $document_date = $dbh->prepare(qq|
-                        select d.date, dt.document_id, dt.term_id, dt.count
-                        from document d
-                        join document_term dt on (d.id =  dt.document_id)
-                        where
-                          d.dataset_id = $dataset_id and
-                          ? = d.date|);
+my $topic_date = $dbh->prepare(qq|
+                        select *
+                        from topic_term
+                        join topic on (topic_id = id)
+                        where date = ? and dataset_id = $dataset_id|);
+
+my $topic_filter = $dbh->prepare(qq|insert ignore into topic_prune (topic_id) values (?)|);
+
+my $filter_threshold = .6;
+
+sub topic_by_date {
+  my $date = shift;
+  $topic_date->execute($date);
+  my $topics = {};
+  while (my $t = $topic_date->fetchrow_hashref()) {
+    $topics->{$t->{topic_id}}->{$t->{term_id}} = $t->{beta};
+  }
+  return $topics;
+}
+
+sub topics_to_prune {
+  my $tp = $dbh->prepare(qq|
+                  select *
+                  from topic_term
+                  join topic_prune_start using(topic_id)|);
+  $tp->execute();
+  my $topics_prune = {};
+  while (my $t = $tp->fetchrow_hashref()) {
+    $topics_prune->{$t->{topic_id}}->{$t->{term_id}} = $t->{beta};
+  }
+  return $topics_prune;
+}
+
+sub cosign_similarity {
+  my ($topic_a,
+      $topic_a_weights,
+      $topic_b,
+      $topic_b_weights,
+      $thresh) = @_;
+  
+  my $n = 0;
+  my $a_norm = 0;
+  my $b_norm = 0;
+  for my $t (keys(%$topic_a_weights)) {
+    if (exists($topic_b_weights->{$t})) {
+      $n += $topic_a_weights->{$t}*$topic_b_weights->{$t};
+    }
+    $a_norm += $topic_a_weights->{$t}**2;
+  }
+  $a_norm = sqrt($a_norm);
+  for my $t (keys(%$topic_b_weights)) {
+    $b_norm += $topic_b_weights->{$t}**2;
+  }
+  $b_norm = sqrt($b_norm);
+  $n = $n / ($a_norm * $b_norm);
+  if ($n > $thresh) {
+    $topic_filter->execute($topic_b);
+  }
+}
+
+my $prune_start = topics_to_prune();
 
 # first do topic similarity
 my $dates = $dbh->selectall_arrayref(qq|
@@ -60,11 +114,18 @@ my $dates = $dbh->selectall_arrayref(qq|
 for my $date (@$dates) {
   $date = $date->[0];
   my $fdate = $date; $fdate =~ s/-/_/g;
-  next if -e "$config->{docroot}/$config->{name}/$fdate.tprune";
+  #next if -e "$config->{docroot}/$config->{name}/$fdate.tprune";
   
   # status
   print "$date ...\n";
+
+  my $topics = topic_by_date($date);
+  for my $a (keys(%$prune_start)) {
+    for my $b (keys(%$topics)) {
+      cosign_similarity($a, $prune_start->{$a}, $b, $topics->{$b}, $filter_threshold);
+    }
+  }
   
   # drop a trigger file to avoid processing topic again
-  `touch $config->{docroot}/$config->{name}/$fdate.tprune`;
+  #`touch $config->{docroot}/$config->{name}/$fdate.tprune`;
 }

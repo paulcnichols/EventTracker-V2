@@ -94,6 +94,6 @@ for my $t_id (sort {$topic_weight->{$b} <=> $topic_weight->{$a}} keys(%$topic_we
     push @strs, $tt; #sprintf("%s,%f", $tt, $topic_dist->{$t_id}->{$tt});
     last if scalar(@strs) > 10;
   }
-  printf "%s, %d, %s\n", $topic_weight->{$t_id}, $t_id, join(' ', @strs);
+  printf "%s,%d,%s\n", $topic_weight->{$t_id}, $t_id, join(' ', @strs);
 }
 

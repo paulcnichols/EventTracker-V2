@@ -70,7 +70,7 @@ my $edges_topic_sim = $dbh->prepare(qq|
                             dtb.document_id as document_b,
                             dta.topic_id as topic_a, 
                             dtb.topic_id as topic_b,
-                            log(dta.weight)*log(dtb.weight)*log(ts.cosign_similarity) as edge
+                            log(dta.weight)+log(dtb.weight)+log(ts.cosign_similarity) as edge
                           from document_topic dta
                           join topic_similarity ts on (dta.topic_id = ts.topic_a)
                           join document_topic dtb on (ts.topic_b = dtb.topic_id)
@@ -81,7 +81,7 @@ my $edges_topic_sim = $dbh->prepare(qq|
                             dtb.document_id as document_b, 
                             dta.topic_id as topic_a, 
                             dtb.topic_id as topic_b,
-                            log(dta.weight)*log(dtb.weight)*log(ts.cosign_similarity) as edge
+                            log(dta.weight)+log(dtb.weight)+log(ts.cosign_similarity) as edge
                           from document_topic dta
                           join topic_similarity ts on (dta.topic_id = ts.topic_b)
                           join document_topic dtb on (ts.topic_a = dtb.topic_id)
@@ -92,66 +92,16 @@ my $edges_topic_sim = $dbh->prepare(qq|
 my $edges_document_sim = $dbh->prepare(qq|
                         (
                           select 
-                            dtb.document_id as document_b,
-                            dta.topic_id as topic_a, 
-                            dtb.topic_id as topic_b,
-                            log(dta.weight)*log(dtb.weight)*log(ds.cosign_similarity) as edge
-                          from document_topic dta
-                          join document_similarity ds on (dta.document_id = ds.document_a)
-                          join document_topic dtb on (ds.document_b = dtb.document_id)
-                          where dta.document_id = ?
+                            document_b,
+                            cosign_similarity as edge
+                          from document_similarity
+                          where document_a = ?
                         ) union
                         (
                           select
-                            dtb.document_id as document_b, 
-                            dta.topic_id as topic_a, 
-                            dtb.topic_id as topic_b,
-                            log(dta.weight)*log(dtb.weight)*log(ds.cosign_similarity) as edge
-                          from document_topic dta
-                          join document_similarity ds on (dta.document_id = ds.document_b)
-                          join document_topic dtb on (ds.document_a = dtb.document_id)
-                          where dta.document_id = ?
-                        )
-                        order by edge desc|);
-
-my $edges_probability = $dbh->prepare(qq|
-                        (
-                          select 
-                            document_b,
-                            topic_a,
-                            topic_b,
-                            log(topic_prod) + term_prob as edge
-                          from edge_intersection
-                          where document_a = ?
-                        ) union
-                        (
-                          select 
-                            document_a as document_b,
-                            topic_b as topic_a,
-                            topic_a as topic_b,
-                            log(topic_prod) + term_prob as edge
-                          from edge_intersection
-                          where document_b = ?
-                        )
-                        order by edge desc|);
-
-my $edges_weighted = $dbh->prepare(qq|
-                        (
-                          select 
-                            document_b,
-                            topic_a,
-                            topic_b,
-                            log(topic_prod) +  log(term_weighted) as edge
-                          from edge_intersection
-                          where document_a = ?
-                        ) union
-                        (
-                          select 
-                            document_a as document_b,
-                            topic_b as topic_a,
-                            topic_a as topic_b,
-                            log(topic_prod) +  log(term_weighted) as edge
-                          from edge_intersection
+                            document_a as document_b, 
+                            cosign_similarity as edge
+                          from document_similarity 
                           where document_b = ?
                         )
                         order by edge desc|);
@@ -186,42 +136,6 @@ sub document {
   }
   $documents->{$document_id} = $document;
   return $document;
-}
-
-my $document_topics = {};
-sub document_topic {
-  my $document_id = shift;
-  my $topic_id = shift;
-  my $m = shift;
-  
-  return document($document_id) if $m <= 2;
-  
-  if ($m == 3) {
-    my $k = "$document_id-$topic_id-$m";
-    return $document_topics->{$k} if $document_topics->{$k};
-    
-    my $document = document($document_id) ;
-    my $topic= topic($topic_id);
-    my $nd = {};
-    for my $t (keys(%$document)) {
-      $nd->{$t} = $document->{$t}*($topic->{$t}||0);
-    }
-    $document_topics->{$k} = $nd;
-    return $nd;
-  }
-  else {
-    my $k = "$document_id-$topic_id-$m";
-    return $document_topics->{$k} if $document_topics->{$k};
-    
-    my $document = document($document_id) ;
-    my $topic= topic($topic_id);
-    my $nd = {};
-    for my $t (keys(%$document)) {
-      $nd->{$t} = $topic->{$t} || .000001;
-    }
-    $document_topics->{$k} = $nd;
-    return $nd;
-  }
 }
 
 sub sample {
@@ -287,13 +201,30 @@ sub wcss {
   return 0 if scalar(keys(%$neighbors)) == 0;
   
   # treat start as centroid
-  my $centoid = document($doc_id);
-  
-  my $wcss = 0;
+  my $centroid = {};
+  my $start = document($doc_id);
+  for my $t (keys(%$start)) {
+    $centroid->{$t} += $start->{$t};
+  }
   for my $n (keys (%$neighbors)) {
     my $other = document($n);
-    for my $t (uniq(keys(%$centoid), keys(%$other))) {
-      $wcss += (($centoid->{$t}||0) - ($other->{$t}||0))**2;
+    for my $t (keys(%$other)) {
+      $centroid->{$t} += $other->{$t}; 
+    }
+  }
+  for my $t (keys(%$centroid)) {
+    $centroid->{$t} /= (scalar(keys(%$neighbors)) + 1);
+  }
+  
+  my $wcss = 0;
+  for my $t (keys(%$centroid)) {
+    $wcss += ($centroid->{$t} - ($start->{$t}||0))**2;
+  }
+  
+  for my $n (keys (%$neighbors)) {
+    my $other = document($n);
+    for my $t (keys(%$centroid)) {
+      $wcss += ($centroid->{$t}- ($other->{$t}||0))**2;
     }
   }
   return $wcss;
@@ -306,14 +237,15 @@ sub mse {
   
   # nothing to do without neighbors 
   return 0 if scalar(keys(%$neighbors)) == 0;
-
-  # find average distance from centroid
+  
+  # treat start as centroid
+  my $centoid = document($doc_id);
+  
   my $wcss = 0;
-  for my $d (keys (%$neighbors)) {
-    my $da = document_topic($doc_id, $neighbors->{$d}->{topic_a}, $neighbors->{$d}->{m});
-    my $db = document_topic($d, $neighbors->{$d}->{topic_b}, $neighbors->{$d}->{m});
-    for my $t (uniq(keys(%$da), keys(%$db))) {
-      $wcss += (($da->{$t}||0) - ($db->{$t}||0))**2;
+  for my $n (keys (%$neighbors)) {
+    my $other = document($n);
+    for my $t (uniq(keys(%$centoid), keys(%$other))) {
+      $wcss += (($centoid->{$t}||0) - ($other->{$t}||0))**2;
     }
   }
   return $wcss;
@@ -350,8 +282,6 @@ sub compare {
   my $doc = shift;
   my $edges_ts = {};
   my $edges_ds = {};
-  my $edges_tp = {};
-  my $edges_dw = {};
   
   $edges_topic_sim->execute($doc, $doc);
   while (my $e = $edges_topic_sim->fetchrow_hashref()) {
@@ -364,82 +294,52 @@ sub compare {
     $edges_ds->{$e->{document_b}} = {edge=>$e->{edge}, topic_a=>0, topic_b=>0, m=>2}
       if scalar(keys(%$edges_ds)) < $edge_limit and !exists($edges_ds->{$e->{document_b}});
   }
-  
-  $edges_probability->execute($doc, $doc);
-  while (my $e = $edges_probability->fetchrow_hashref()) {
-    $edges_tp->{$e->{document_b}} = {edge=>$e->{edge}, topic_a=>$e->{topic_a}, topic_b=>$e->{topic_b}, m=>3}
-      if scalar(keys(%$edges_tp)) < $edge_limit and !exists($edges_tp->{$e->{document_b}});
-  }
-  
-  $edges_weighted->execute($doc, $doc);
-  while (my $e = $edges_weighted->fetchrow_hashref()) {
-    $edges_dw->{$e->{document_b}} = {edge=>$e->{edge}, topic_a=>$e->{topic_a}, topic_b=>$e->{topic_b}, m=>4}
-      if scalar(keys(%$edges_dw)) < $edge_limit and !exists($edges_dw->{$e->{document_b}});
-  }
-  
+
   my $all_lim =
-        scalar(keys(%$edges_ts)) > $edge_limit &&
-        scalar(keys(%$edges_ds)) > $edge_limit &&
-        scalar(keys(%$edges_tp)) > $edge_limit &&
-        scalar(keys(%$edges_dw)) > $edge_limit;
+        scalar(keys(%$edges_ts)) >= $edge_limit &&
+        scalar(keys(%$edges_ds)) >= $edge_limit;
   
   my $all_some =
         scalar(keys(%$edges_ts)) > 0 &&
-        scalar(keys(%$edges_ds)) > 0 &&
-        scalar(keys(%$edges_tp)) > 0 &&
-        scalar(keys(%$edges_dw)) > 0;        
+        scalar(keys(%$edges_ds)) > 0;
 
   if ($all_lim) {
     $totals_lim->{1} += scalar(keys(%$edges_ts));
-    $totals_lim->{2} += scalar(keys(%$edges_ds));
-    $totals_lim->{3} += scalar(keys(%$edges_tp));
-    $totals_lim->{4} += scalar(keys(%$edges_dw));    
+    $totals_lim->{2} += scalar(keys(%$edges_ds));   
   }
   elsif ($all_some) { 
     $totals_some->{1} += scalar(keys(%$edges_ts));
-    $totals_some->{2} += scalar(keys(%$edges_ds));
-    $totals_some->{3} += scalar(keys(%$edges_tp));
-    $totals_some->{4} += scalar(keys(%$edges_dw));    
+    $totals_some->{2} += scalar(keys(%$edges_ds)); 
   }
   else {
     $totals_partial->{1} += scalar(keys(%$edges_ts));
     $totals_partial->{2} += scalar(keys(%$edges_ds));
-    $totals_partial->{3} += scalar(keys(%$edges_tp));
-    $totals_partial->{4} += scalar(keys(%$edges_dw));  
   }
 
-  my $edges = [$edges_ts, $edges_ds, $edges_tp, $edges_dw];
+  my $edges = [$edges_ts, $edges_ds];
   my $r = [$doc];
-  for (my $i = 0; $i < 4; ++$i) {
     
-    # do stats to determine recall similarity between methods
-    for (my $j = $i + 1; $j < 4; ++$j) {
-      my $intersection = 0;
-      for my $k (keys(%{$edges->[$i]})) {
-        $intersection += 1 if exists($edges->[$j]->{$k});
-      }
-      if ($all_lim) {       
-        $stats_lim->{$i+1}->{$j+1} += $intersection; 
-      }
-      elsif ($all_some) {
-        $stats_some->{$i+1}->{$j+1} += $intersection; 
-      }
-      else {
-        $stats_partial->{$i+1}->{$j+1} += $intersection; 
-      }
-    }
-    
-    # calculate coherence measures
-    push @$r, scalar(keys(%{$edges->[$i]}));
-    push @$r, kl($doc, $edges->[$i]);
-    push @$r, wcss($doc, $edges->[$i]);
-    push @$r, mse($doc, $edges->[$i]);
-    push @$r, variance($doc, $edges->[$i]);
+  # do stats to determine recall similarity between methods
+  my $intersection = 0;
+  for my $k (keys(%$edges_ts)) {
+    $intersection += 1 if exists($edges_ds->{$k});
   }
+  
+  # calculate coherence measures
+  push @$r, scalar(keys(%$edges_ts));
+  push @$r, kl($doc, $edges_ts);
+  push @$r, wcss($doc, $edges_ts);
+  push @$r, mse($doc, $edges_ts);
+  push @$r, variance($doc, $edges_ts);
+  push @$r, scalar(keys(%$edges_ds));
+  push @$r, kl($doc, $edges_ds);
+  push @$r, wcss($doc, $edges_ds);
+  push @$r, mse($doc, $edges_ds);
+  push @$r, variance($doc, $edges_ds);
+  push @$r, $intersection;
   return $all_some, $r; 
 }
 
-open FH_OVERLAP, ">", "overlap_$config->{name}.txt";
 open FH_COHERENCE, ">", "coherence_$config->{name}.txt";
 
 # start a slice in the middle of the week and gather
@@ -462,14 +362,3 @@ for (my $i = 0; $i < $days; ++$i) {
 }
 close FH_COHERENCE;
 
-for (my $i=1; $i <= 4; ++$i) {
-  printf FH_OVERLAP "tot_lim,%d,%d\n", $i, $totals_lim->{$i};
-  printf FH_OVERLAP "tot_some,%d,%d\n", $i, $totals_some->{$i};
-  printf FH_OVERLAP "tot_partial,%d,%d\n", $i, $totals_partial->{$i};
-  for (my $j=$i+1; $j <= 4; ++$j) {
-    printf FH_OVERLAP "isect_lim,%d,%d,%d\n", $i, $j, $stats_lim->{$i}->{$j};
-    printf FH_OVERLAP "isect_some,%d,%d,%d\n", $i, $j, $stats_some->{$i}->{$j};
-    printf FH_OVERLAP "isect_partial,%d,%d,%d\n", $i, $j, $stats_partial->{$i}->{$j};
-  }
-}
-close FH_OVERLAP;

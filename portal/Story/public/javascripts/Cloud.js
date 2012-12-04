@@ -10,6 +10,8 @@ function CloudAll(driver, name) {
   self.active = 7;
   
   self.resize = function () {
+    self.active = 7;
+    self.range = [];
     for (var i = self.start; i < self.end; ++i) {
       self.addOffset(i, -1);
     }
@@ -142,6 +144,8 @@ function CloudTopic(driver, name, topic) {
   
   self.resize = function () {
     var resize_helper = function () {
+      self.active = 7;
+      self.range = [];
       for (var i = self.start; i < self.end; ++i) {
         self.addOffset(i, -1);
       }
