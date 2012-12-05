@@ -13,6 +13,18 @@
     font-size:50;
     border-bottom:solid;
   }
+  #panel-top-button {
+    color:'lightblue';
+    position:fixed;
+    height:30;
+    right: 0;
+    z-index:1;
+    font-family: 'Fugaz One', cursive;
+    padding-top:15;
+    margin-bottom:15;
+    margin-right:40;
+    font-size:30;
+  }
   
   .panel-arrow {
     position:fixed;
@@ -37,19 +49,42 @@
     position:relative;
     top:70;
     left:85;
-    text-align:center
+    text-align:center;
+    height:100%;
+    width:100%;
+    
   }
   .fake-link:hover {
     text-decoration:underline;
   }
 </style>
 <div id="panel-top"></div>
+<div id="panel-top-button"><a class="btn" id="panel-top-button-name">Graph View</a></div>
 <div id="panel-left" class="panel-arrow" style="left:0"><div class="panel-arrow-inner">&#060;&#060;</div></div>
 <div id="panel-right" class="panel-arrow" style="right:0"><div class="panel-arrow-inner">&#062;&#062;</div></div>
 <div id="panel"></div>
 
 <script type="text/javascript" src="/javascripts/raphael-min.js"></script>
+<script type="text/javascript" src="/javascripts/Driver.js"></script>
 <script type="text/javascript" src="/javascripts/Cloud.js"></script>
+<script type="text/javascript" src="/javascripts/Grapher.js"></script>
 <script type="text/javascript" charset="utf-8">
-  Cloud('[% name %]');
+  var name = '[% name %]';
+  var driver = new Driver(name);
+  var last = [];
+  $('#panel-top-button-name').click(function () {
+    if (last.length > 0) {
+      driver.remove_context(last.pop());
+    }
+    if (this.innerHTML == 'Graph View') {
+      this.innerHTML = 'Table View';
+      last.push(new Grapher(driver, name));
+    }
+    else {
+      this.innerHTML = 'Graph View';
+      last.push(new CloudAll(driver, name));
+    }
+    driver.swap_context(last[last.length-1]);
+  });
+  
 </script>

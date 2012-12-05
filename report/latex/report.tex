@@ -24,13 +24,13 @@
 
 
 \begin{abstract}
-Stream-like data sources, such as a collection of RSS feeds, can be challenging to summarize as the corpus is ever growing and the nature of the data evolves over time.  This project implements a web application for managing RSS feeds.  LDA topic modeling is performed at daily intervals and linkages between learned topics from different days are computed to form the edges in what can be considered a ``Storytelling Graph".  This storytelling graph can be explored through the web application  to answer a number of contextual questions from both the perspective of a topic and a document.  
+Stream-like data sources, such as a collection of RSS feeds, can be challenging to summarize as the corpus is ever growing and the nature of the data evolves over time.  This project implements a web application for managing RSS feeds that addresses this challenge.  LDA topic modeling is performed at daily intervals and linkages between learned topics from different days are computed to form the edges in what can be considered a ``Storytelling Graph".  This storytelling graph can be explored through the web application  to answer a number of contextual questions from both the perspective of a topic and a document.  
 \end{abstract}
 
 \section{Introduction}
 The modern media landscape is a chaotic, fast-moving stream of content created by authors of all size and scale. Well known examples of streaming data sources include news content from major media outlets (i.e. through RSS feeds), the collective musings of Twitter's user base  (i.e. the Twitter Firehose), and the click-stream generated from surfing internet (i.e. from network logging) .
 
-It is becoming increasing more difficult for news consumers, media professionals, and researchers to organize, follow, and identify the importance of each story or topic. Summarizing and contextualizing information in a data stream is a natural and important problem that arises. Various solutions such as newsmap.jp, Google Word Cloud, and Google News have been developed to visually organize and give weighting to topics and news stories. These solutions present information on topics in a real-time snapshot, but do a poor job with contextualizing topics or stories over a period of time. 
+It is becoming increasingly more difficult for news consumers, media professionals, and researchers to organize, follow, and identify the importance of each story or topic. Summarizing and contextualizing information in a data stream is a natural and important problem that arises. Various solutions such as newsmap.jp, Google Word Cloud, and Google News have been developed to visually organize and give weighting to topics and news stories. These solutions present information on topics in a real-time snapshot, but do a poor job with contextualizing topics or stories over a period of time. 
 
 The most popular form of summarization on a data stream is mining for trending topics, typically through an unsupervised learning process. Trending topics provide a high level view of the prominent themes present in a data stream during a window of time.  A set of trending topics, or even multiple sets from different windows of time, can provide insight in isolation.   However, contextual questions about a topic's lifetime, momentum, and evolution cannot be addressed.  To answer these more advanced questions, topics must be linked beyond the window in time they were discovered.  This set of time sensitive topics and the linkages between them is referred to in this report as a ``Storytelling Graph".  
 
@@ -49,11 +49,11 @@ The foundation of this project rests on the ability to extract a set of relevant
 
 A brief tour of alternatives to LDA topic modeling is given to motivate its usage.  Unsupervised methods for discovery and summarization of a corpus have a rich history rooted in information retrieval.  Before the more abstract task of a topic discovery became widely known, document clustering was a well studied problem.  Document clustering is used to find document similarities and partitions of similar documents in a corpus.   
 
-The vector space representation of a document is a common place to begin document clustering.  The vector space representation of a document holds term counts by assigning a unique dimension to each term that exists in the corpus.  Various term weighting schemes can be applied to the document vectors such as tf-idf weighting.  These schemes enhance the similarity measures by reducing the contribution of unimportant words such as stop words.  Similarity between two documents in vector space can be measured with a geometric interpretation either, by the angle between them (cosign similarity) or the distance apart (euclidean distance).
+The vector space representation of a document is a common place to begin document clustering.  The vector space representation of a document holds term counts by assigning a unique dimension to each term that exists in the corpus.  Various term weighting schemes can be applied to the document vectors such as tf-idf weighting.  These schemes enhance the similarity measures by reducing the contribution of unimportant words such as stop words.  Similarity between two documents in vector space can be measured with a geometric interpretation either, by the angle between them (cosine similarity) or the distance apart (euclidean distance).
 
-A good first step towards topic discovery is the K-means algorithm applied to corpus of tf-idf weighted documents in the vector space representation.  K-means attempts to find a partitioning of the corpus into K groups such that the euclidean distance of a cluster's members is minimized.  Iterative refinement from randomly initialized means can be used to approximate this hard problem.  The most highly weighted term indices of the resulting K mean vectors from a clustering job loosely represent the topics present within the corpus.  The approach is advantageous for streaming data because the learned mean vectors can be compared across clustering jobs from different time windows easily (using either cosign similarity or euclidean distance between the means).  The approach is also desirable because it is simple and fast.  However, the technique lacks the richness of topic mixtures by assuming each document can belong to only one mean vector. 
+A good first step towards topic discovery is the K-means algorithm applied to corpus of tf-idf weighted documents in the vector space representation.  K-means attempts to find a partitioning of the corpus into K groups such that the euclidean distance of a cluster's members is minimized.  Iterative refinement from randomly initialized means can be used to approximate this hard problem.  The most highly weighted term indices of the resulting K mean vectors from a clustering job loosely represent the topics present within the corpus.  The approach is advantageous for streaming data because the learned mean vectors can be compared across clustering jobs from different time windows easily (using either cosine similarity or euclidean distance between the means).  The approach is also desirable because it is simple and fast.  However, the technique lacks the richness of topic mixtures by assuming each document can belong to only one mean vector. 
 
-Another early approach that improves upon the vector space representation is Latent Semantic Analysis (LSA).  LSA computes the singular value decomposition of a document-term matrix to find low-rank approximations of the latent document and term matrices.  The resulting matrix factorization has the property that when a pair of documents or a pair of terms are similar, they will be near (using cosign similarity or euclidean distance) in their respective vector spaces.  LSA is good step towards finding a representation that can capture synonymy and polysemy, but is not suitable in the streaming paradigm where the process repeats and regular intervals.  The resulting matrix factorizations are unique to the document-term matrix they were derived from.  There is no straight forward way to compare either the learned term or the document representations from different time windows.
+Another early approach that improves upon the vector space representation is Latent Semantic Analysis (LSA).  LSA computes the singular value decomposition of a document-term matrix to find low-rank approximations of the latent document and term matrices.  The resulting matrix factorization has the property that when a pair of documents or a pair of terms are similar, they will be near (using cosine similarity or euclidean distance) in their respective vector spaces.  LSA is good step towards finding a representation that can capture synonymy and polysemy, but is not suitable in the streaming paradigm where the process repeats and regular intervals.  The resulting matrix factorizations are unique to the document-term matrix they were derived from.  There is no straight forward way to compare either the learned term or the document representations from different time windows.
 
 Probabilistic Latent Semantic Analysis (PLSA) addresses the limitations above with LSA by stepping away from the vector space representation of LSA to a probabilistic representation of terms and document.  PLSA represents documents in the bag-of-word format where term frequency is maintained but not order and no geometric interpretation is applied. PLSA introduces a hidden random variable to model topics and then learns document-topic and topic-term distributions through the Expectation Maximization (EM) algorithm.  PLSA can also overcome issues such as synonymy and polysemy through the topic, and has the advantage of allowing mixtures of topic (or cluster) assignments.  Lastly, PLSA is advantageous in the streaming paradigm because the resulting topic distributions are interpretable and comparable across different time windows. 
 
@@ -78,7 +78,7 @@ The starting point of graph creation is corpus of documents partitioned by a tim
 \mathbf{d}_i^t &= \{ w_{i,0}, \dots, w_{i,M} \}
 \end{align}
 
-For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ represent the documents partitioned by day.  Each individual day's sub-corpus $\mathbf{C}_t$ is a collection documents where each document $\mathbf{d}_i^t$ is in the bag-of-word format.  For the purposes of this document, superscripts are used to denote documents, topics, and distributions from a given day $t$ except when describing running times.  In this project LDA topic modeling is used to estimate from the daily corpus $\mathbf{C}_t$ the probability distributions of the the document-topic distribution, $\theta_{i,k}^t$, and topic-term distribution, $\phi_{j,k}^t$.
+For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ represent the documents partitioned by day.  Each individual day's sub-corpus $\mathbf{C}_t$ is a collection documents where each document $\mathbf{d}_i^t$ is in the bag-of-word format.  Superscripts are used to denote documents, topics, and distributions from a given day $t$ except when describing running times.  In this project LDA topic modeling is used to estimate from the daily corpus $\mathbf{C}_t$ the probability distributions of the the document-topic distribution, $\theta_{i,k}^t$, and topic-term distribution, $\phi_{j,k}^t$.
 
 \begin{table}
 \begin{center}
@@ -104,7 +104,7 @@ For the purposes of this project, the partitions $\mathbf{C}_t$ for $t \le T$ re
 
 The storytelling graph constructed from the learned distributions follows the standard form: $\mathbf{G}$ = $(\mathbf{V}, \mathbf{E})$.  A unique feature of the storytelling graph is that the vertices in $\mathbf{V}$ can include both the documents and the topics.  The graph structure follows directly from the conditional dependence graph of the LDA model, but includes additional grafts between topics across different days.  The edges in $\mathbf{E}$ are undirected, as opposed to directed when representing conditional independence.
 
-Edges are weighted by floating point values ranging between between $[0, 1]$.  Edges between documents are always 0 (i.e. are not allowed).  Topics may form edges with documents of the same day using the document-topic distribution.  Edges between topics across different days are formed by computing the cosign similarity on the vector space interpretation of the topic-word distributions.  Though blatantly not probabilistic, the cosign similarity between two probability distributions will at least always return a value between $[0,1]$. These topic-topic edges are precomputed between the current days topics and all previous days topic within some limit (in this project, 15 days).  The formal rules for constructing edge weights are as follows:  
+Edges are weighted by floating point values ranging between between $[0, 1]$.  Edges between documents are always 0 (i.e. are not allowed).  Topics may form edges with documents of the same day using the document-topic distribution.  Edges between topics across different days are formed by computing the cosine similarity on the vector space interpretation of the topic-word distributions.  Though blatantly not probabilistic, the cosine similarity between two probability distributions will at least always return a value between $[0,1]$. These topic-topic edges are precomputed between the current days topics and all previous days topic within some limit (in this project, 15 days).  The formal rules for constructing edge weights are as follows:  
 
 \begin{align}
   e(\mathbf{d}_i^t, \mathbf{d}_{i'}^{t'}) &= \quad 0 \qquad\quad \forall \quad i, t, i', t'\\
@@ -217,7 +217,7 @@ The next stage of the pipeline performs topic modeling on the daily corpus that 
 \caption{Sequential Stages of Data Collection/Processing}
 \end{figure}  
 
-After the topic modeling has completed for the current day, edges are computed between topics of the previous days within a given window of time.  As time progresses, the total time frame a similar topic can be detected is the window of days before and after the topic date.  Similarity between topics is computed by treating the topic-term distribution as a vector space representation and computing the cosign-similarity.  
+After the topic modeling has completed for the current day, edges are computed between topics of the previous days within a given window of time.  As time progresses, the total time frame a similar topic can be detected is the window of days before and after the topic date.  Similarity between topics is computed by treating the topic-term distribution as a vector space representation and computing the cosine-similarity.  
 
 Lastly, after all the previous stages have completed, the downloaded document data, topic distributions, and similarity measures are imported into a database.  After the import process completes the max date is updated so that queries may be performed agains the new, fully imported day's worth of information.  The database contains all information required by the web portal to let a user explore the data stream and answer relevant story graph queries.
 
@@ -277,7 +277,7 @@ One basic approach to further improve the learned topics is filtering by manual 
 \subsection {Query by Topic}
 The next component to evaluate is the effectiveness of computing topic similarities.  Querying the storytelling graph by topic requires a threshold for similarity that not straightforward to set.  Again, because the method is unsupervised there are no explicit labels for when two topics should be joined that would allow the threshold to be optimized for accuracy.   Instead the threshold must be set by a qualitative feel.
 
-Plotting the density of the cosign similarity values for one day's topics with the neighboring topics provides some clues about where to search for a threshold.  The density plot of the all topic similarities for one day reveal that the vast majority are near 0.  Zooming in further to only similarities above .3 reveals a slightly more interesting structure.  A surprising number of similarities are very near 1, a perfect match.  Upon inspection these topics were found to be further ``artifact" topics and will be suppressed manually as described above.
+Plotting the density of the cosine similarity values for one day's topics with the neighboring topics provides some clues about where to search for a threshold.  The density plot of the all topic similarities for one day reveal that the vast majority are near 0.  Zooming in further to only similarities above .3 reveals a slightly more interesting structure.  A surprising number of similarities are very near 1, a perfect match.  Upon inspection these topics were found to be further ``artifact" topics and will be suppressed manually as described above.
 
 To get a sense of how topic distributions become less similar, this zoomed in threshold space is sampled by comparing a starting prominent topic to a neighboring topic for each similarity range: [.9, 1], [.8, .9], [.6, .8], [.4, .6], and [.3, .4]. The sampled distributions of increasingly lower similarity show qualitatively that a good threshold is likely somewhere between .6 and .4.  Though the example with Hurricane Isaac is but a single instance, similar behavior is observed generally. At the lowest value in this range the neighboring topic begins to really diverge.  However, tolerance to noise can be left as a parameter to the user. 
 
@@ -286,7 +286,7 @@ To get a sense of how topic distributions become less similar, this zoomed in th
 \centering
 \mbox{\subfigure{\includegraphics[scale=0.22]{img/similarity-all.pdf}}
 \subfigure{\includegraphics[scale=0.22]{img/similarity.pdf}}}
-\caption{Density of topic similarity (left), and density of topic similarity greater than .3 (right).  Nearly all cosign similarity values between topics are near 0, suggesting that even a low threshold of .3 has a large margin before it becomes too noisy.}
+\caption{Density of topic similarity (left), and density of topic similarity greater than .3 (right).  Nearly all cosine similarity values between topics are near 0, suggesting that even a low threshold of .3 has a large margin before it becomes too noisy.}
 \end{figure}
 
 \begin{table}
@@ -341,16 +341,18 @@ teacher &  kids & students & teacher & \textbf{lewis} \\
 
 \subsection {Query by Document}
 
-Querying by document involves first gathering the prominent topics for a given document and then tracing through the topic-topic edges back down to another document.  The topic in this case is used as a proxy to the document's actual content.  This leads to the unusual problem where two documents can be similar topic-wise but less similar by their raw content.  To quantify the performance of the indirect nature of querying by document, the method is compared to simple cosign similarity between two documents.  
+Querying by document involves first gathering the prominent topics for a given document and then tracing through the topic-topic edges back down to another document.  The topic in this case is used as a proxy to the document's actual content.  This leads to the unusual problem where two documents can be similar topic-wise but less similar by their raw content.  To quantify the performance of the indirect nature of querying by document, the method is compared to simple cosine similarity between two documents.  
 
 \begin{figure}
 \centering
-\mbox{
-\subfigure{\includegraphics[scale=0.14]{img/news-wcss.pdf}}
-\subfigure{\includegraphics[scale=0.14]{img/business-wcss.pdf}
-\subfigure{\includegraphics[scale=0.14]{img/sports-wcss.pdf}}}
+\includegraphics[scale=0.28]{img/min-wcss.pdf}
+%\mbox{
+%\subfigure{\includegraphics[scale=0.14]{img/news-wcss.pdf}}
+%\subfigure{\includegraphics[scale=0.14]{img/business-wcss.pdf}}
+%\subfigure{\includegraphics[scale=0.14]{img/sports-wcss.pdf}}}
 }
-\caption{Histograms of the difference in WCSS between document queries using simple document similarity and the storytelling graph.  Positive values indicate the storytelling graph produced a smaller WCSS and more coherent neighbors (good results).  }
+\caption{Barchart of the number of instances by dataset where the storytelling graph query returned a lower WCSS value than the document-similarity query.  In at least two of the datasets, the storytelling graph performs better on average. }
+%\caption{Histograms of the difference in WCSS between document queries using simple document similarity and the storytelling graph.  Positive values indicate the storytelling graph produced a smaller WCSS and more coherent neighbors (good results).  }
 \end{figure}
 
 The method for comparison involves sampling documents from the three different datasets over a two week period and pulling back their most relevant neighbors.   Document similarity is restricted to pairs higher than .45 to provide comparable noise reduction to the thresholds in the storytelling graph.  The returned documents are evaluated as a cluster by the within cluster sum of squares criteria on the vector space representation.  
@@ -430,15 +432,33 @@ Mass & Mass_\alpha & Velocity & Momentum & Topic\\
 
 \begin{figure}
 \centering
-\mbox{\subfigure{\includegraphics[scale=0.22]{img/story-time.pdf}}
-\subfigure{\includegraphics[scale=0.22]{img/momentum-3.pdf}}}
+\mbox{\subfigure{\includegraphics[scale=0.22]{img/story-time.pdf}}\subfigure{\includegraphics[scale=0.22]{img/momentum-3.pdf}}}
 \caption{Document count by story over time (left) and Momentum by story over time (right).  The log(momentum) view offers a smoother curve that gives a more visually intuitive understanding of the change in a story's prominence over time. }
 \end{figure}
 
 \section {Conclusion and Future Work}
 
-This project implements a web application to explore RSS feeds and display information in such a way that emphasizes time and the connectedness of topics.  To accomplish this goal, a storytelling graph was introduced created from LDA topic modeling at daily intervals.  The web applications allows exploring a data stream both from the perspective of an abstract topic and and a concrete document.  Both modes of operation follow directly from the queries possible on the story graph.  Metrics on the storytelling graph are introduced to further prioritize topics and supply quantitive methods to evaluate the prominence of a story.
+This project implements a web application to explore RSS feeds and display information in such a way that emphasizes time and the connectedness of topics.  To accomplish this goal, a storytelling graph was introduced created from LDA topic modeling at daily intervals.  The web applications allows exploring a data stream both from the perspective of an abstract topic and and a concrete document.  Both modes of operation follow directly from the queries possible on the story graph.  Metrics on the storytelling graph are introduced to further prioritize topics and supply quantitive methods to evaluate the prominence of a story.  The resulting implementation is a fun and easy to use way to follow stories over time.
 
 Future improvements might include enhancements to article extraction and data cleaning, integration with natural language processing (NLP) techniques to identify actors and agents present in topics, and further display improvements to the front end.  Proper article extraction proved paramount, and yet artifact and ambiguous topics remain that need be suppressed.  It is likely that further data cleaning methods can still improve upon this issue.  NLP named entity extraction was considered, but time did not permit a full integration.  Identifying entities in documents would further enhance the presentation of an evolving story.  Lastly, further visualization efforts the storytelling graph and the metrics can improve the user experience.  
+
+\begin{thebibliography}{9}
+\bibitem {Book} Bishop, C.  Pattern Recognition and Machine Learning.  
+Springer; 1st ed. 2006. Corr. 2nd printing edition (October 1, 2007)
+
+\bibitem{LDA} Blei, D. M., Ng, A. Y., & Jordan, M. I. (2003). Latent Dirichlet Allocation. Journal of Machine Learning Research,
+3, 993-1022.
+
+\bibitem{LDA-Summary} Griffiths, T. L., & Steyvers, M. (2004). Finding scientific topics. Proceedings of the National Academy of Science, 101, 5228-5235.
+
+\bibitem{Inspiration} Khurdiya, A., Dey, L., Raj, N. and  Haque, M. Multi-perspective linking of news articles within a repository. International Joint Conference on Artificial Intelligence, 22.
+
+\bibitem{Mallet}  McCallum, Andrew Kachites.  "MALLET: A Machine Learning for Language Toolkit." \url{http://mallet.cs.umass.edu}. 2002.
+
+\bibitem{Optimize Alpha} Wallach, H. Structured Topic Models for Language. B.A., University of Cambridge (2001); M.Sc., University of Edinburgh (2002)
+
+\bibitem{boiler pipe} Kohlschütter, C. Boilerplate Detection using Shallow Text Features. WSDM 2010 -- The Third ACM International Conference on Web Search and Data Mining New York City, NY USA.
+
+\end{thebibliography}
 
 \end{document}

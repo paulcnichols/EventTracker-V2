@@ -67,9 +67,9 @@ barplot(
   names=c('news', 'sports', 'business'),
   main="Method of minimum MSE neighbors by dataset")
 
-hist(DN$wcss1-DN$wcss2, col='blue', main="Difference between WCSS of methods: News", xlab="WCSS(Story) - WCSS(Document-Similarity)")
-hist(DS$wcss1-DS$wcss2, col='green', main="Difference between WCSS of methods: Sports", xlab="WCSS(Story) - WCSS(Document-Similarity)")
-hist(DB$wcss1-DB$wcss2, col='red', main="Difference between WCSS of methods: Business", xlab="WCSS(Story) - WCSS(Document-Similarity)")
+hist(DN$wcss2-DN$wcss1, col='blue', main="Difference between WCSS of methods: News", xlab="WCSS(Document-Similarity)-WCSS(Story)")
+hist(DS$wcss2-DS$wcss1, col='green', main="Difference between WCSS of methods: Sports", xlab="WCSS(Document-Similarity)-WCSS(Story)")
+hist(DB$wcss2-DB$wcss1, col='red', main="Difference between WCSS of methods: Business", xlab="WCSS(Document-Similarity)-WCSS(Story)")
 
 hist(DN$intersection, col=rgb(0,0,1,1/8), main="Histogram of intersection between methods", xlab="Intersection")
 hist(DS$intersection, col=rgb(0,1,0,1/8), add=T)

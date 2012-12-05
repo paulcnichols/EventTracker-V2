@@ -60,6 +60,29 @@ sub get_topic_weights {
 #
 # Get topic ids and prior by date
 #
+sub get_edges_by_topic {
+  my $topic = shift;
+  my $edge_key = "topic-$topic-edges";
+  my $edges = $cache->get($edge_key);
+  if (!$edges) {
+    # get the top 5 topics
+    my $sth = database->prepare(qq|select *
+                                   from topic_similarity
+                                   where topic_a = ? or topic_b = ?|);
+    $sth->execute($topic, $topic);
+    $edges = {};
+    while (my $e = $sth->fetchrow_hashref()) {
+      my $n_id = $e->{topic_a} != $topic ? $e->{topic_a} : $e->{topic_b}; 
+      $edges->{$n_id} = $e->{cosign_similarity};
+    }
+    $cache->set($edge_key, $edges);
+  }
+  return $edges;
+}
+
+#
+# Get topic ids and prior by date
+#
 sub get_topics_by_date {
   my $dataset_id = shift;
   my $date = shift;
@@ -75,7 +98,7 @@ sub get_topics_by_date {
     $sth->execute();
     $topics = {};
     while (my $t = $sth->fetchrow_hashref()) {
-      $topics->{$t->{topic_id}} = {alpha => $t->{alpha}};
+      $topics->{$t->{topic_id}} = {alpha => $t->{alpha}, edges => get_edges_by_topic($t->{topic_id})};
     }
     $cache->set($topic_key, $topics);
   }

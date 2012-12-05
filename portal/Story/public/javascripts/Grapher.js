@@ -1,14 +1,115 @@
-function follow(name, id) {
-  var location = '/' + name + '/subgraph/' + id + '?';
-  location += 'branch='+ $('#branch').val() + '&';
-  location += 'depth='+ $('#depth').val() + '&';
-  location += 'sim_thresh='+ $('#sim_thresh').val() + '&';
-  location += 'doc_thresh='+ $('#doc_thresh').val() + '&';
-  location += 'topic_thresh='+ $('#topic_thresh').val() + '&';
-  location += 'method='+ $('#method').val();
-  document.location = location;
-};
-function Grapher(name, data, center, container, info) {  
+function Grapher(driver, name) {
+  var self = this;
+  self.driver = driver;
+  self.name = self.nav = name;
+  self.cache = {};
+  self.active = 7;
+ 
+  self.resize = function () {
+    // remove and resize container
+    var panel = $("#panel");
+    panel.empty();
+    self.width = window.innerWidth - 195;
+    self.height =  window.innerHeight - 100;
+    panel.css('width', self.width);
+    panel.css('height', self.height);
+    
+    // creates canvas
+    self.paper = Raphael('panel', self.width, self.height); 
+    for (var i = self.driver.start; i < self.driver.end; ++i) {
+      $.ajax({url:'/cloud_data/' + self.name + '/' + i,
+              async: false})
+      .done(function (data) {
+        self.cache[i] = JSON.parse(data);
+      });
+    }
+    //$('html, body').animate({ scrollTop: self.top }, 0);
+    
+    // do paint
+    self.paint();
+  };
+
+  self.right = function () {
+    self.driver.start++;
+    self.driver.end++;
+    self.driver.resize();
+  };
+  
+  self.left = function (k) {
+    if (self.driver.start == 0) {
+      return;
+    }
+    self.driver.start--;
+    self.driver.end--;
+    self.driver.resize();
+  };
+  
+  self.paint = function () {
+    var x_pad = 40;
+    var y_pad = 50;
+    var x_max = $('#panel').width() - 2*x_pad;
+    var y_max = $('#panel').height() - 2*y_pad;
+    
+    // Draw x axis
+    self.paper.path(['M', x_pad, y_pad + y_max, 'H', x_pad + x_max].join(' ')).attr({'stroke':'grey'});
+    for (var i = self.driver.start; i < self.driver.end; ++i) {
+      var dx = x_pad + x_max*(i-self.driver.start)/(self.driver.end-self.driver.start);
+      var dy = y_pad + y_max;
+      self.paper.text(dx, dy+10, self.cache[i].date).attr({'font-size':15});
+    }
+    
+    // Draw y axis
+    self.paper.path(['M', x_pad, y_pad, 'V', y_pad + y_max].join(' ')).attr({'stroke':'grey'});
+    
+    // plot nodes
+    var n = {};
+    var xw = (1)/(self.driver.end-self.driver.start) * x_max;
+    for (var i = self.driver.start; i < self.driver.end; ++i) {
+      
+      // find min-max weight for day
+      var min_w = 1000000;
+      var max_w = -1000000;
+      $.each(self.cache[i].topics, function (i, n) {
+        n.weight = parseFloat(n.weight);
+        n.alpha = parseFloat(n.alpha);
+        if (n.weight > max_w)
+          max_w = n.weight;
+        if (n.weight < min_w)
+          min_w = n.weight;
+      });
+      
+      for (var j in self.cache[i].topics) {
+        var topic = self.cache[i].topics[j];
+        var nx = (.8*Math.random()+.1)*xw + (i-self.driver.start)*xw + x_pad;
+        var ny = y_max - (topic.weight - min_w)/(max_w - min_w)*y_max + y_pad;
+        var center = false;
+        self.paper.circle(nx, ny, topic.weight).attr({
+          'fill-opactiy' : 95,
+          'fill' : center ? 'yellow': 'grey',
+          'stroke' : center ? 'blue' : 'black',
+          'stroke-width' : 2});
+        n[j] = {px:nx, py:ny, drawn:false};
+      }
+    }
+    //// draw edges
+    //for (var i = self.driver.start; i < self.driver.end; ++i) {
+    //  for (var j in self.cache[i].topics) {
+    //    var topic = self.cache[i].topics[j];
+    //    var a = n[j];
+    //    for (var e in topic.edges) {
+    //      if (typeof(n[e]) == 'undefined') continue;
+    //      var b = n[e];
+    //      var s = ['M', a.px, a.py, 'C', a.px + .2*(b.px-a.px),
+    //                                     a.py + .8*(b.py-a.py),
+    //                                     b.px - .8*(b.px-a.px),
+    //                                     b.py - .2*(b.py-a.py),
+    //                                     b.px, b.py];
+    //      var p = self.paper.path(s.join(' ')).attr({stroke:'black', 'stroke-width': 1+topic.edges[e].cosign_similarity*6});
+    //    }
+    //    
+    //  }
+    //}
+  };
   function update_info(n) {
     var info_div = $('#'+info);
     info_div.empty();
@@ -270,7 +371,4 @@ function Grapher(name, data, center, container, info) {
     $.each(nodes, function (j, p) { p.circle.toFront(); } );
     update_info(center_node);
   };
-  
-  // kick off whole shebang
-  update_container();
 }

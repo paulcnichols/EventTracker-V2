@@ -2,46 +2,30 @@ function CloudAll(driver, name) {
   var self = this;
   self.driver = driver;
   self.name = self.nav = name;
-  self.range = [];
-  self.start = 0;
-  self.end = 7;
-  self.top = 0;
   self.cache = {};
-  self.active = 7;
   
   self.resize = function () {
-    self.active = 7;
-    self.range = [];
-    for (var i = self.start; i < self.end; ++i) {
+    var panel = $("#panel");
+    panel.empty();
+    for (var i = self.driver.start; i < self.driver.end; ++i) {
       self.addOffset(i, -1);
     }
-    $('html, body').animate({ scrollTop: self.top }, 0);
+    $('html, body').animate({ scrollTop: 0 }, 0);
   };
 
   self.right = function () {
-    if (self.active > 0) {
-      return;
-    }
-    self.active += 1;
-    
-    var first = self.range.shift();
-    $('#'+first).remove();
-    self.start++;
-    self.end++;
-    self.addOffset(self.end - 1, -1);
+    self.driver.start++;
+    self.driver.end++;
+    self.resize();
   };
   
   self.left = function (k) {
-    if (self.active > 0 || self.start == 0) {
+    if (self.driver.start == 0) {
       return;
     }
-    self.active += 1;
-    
-    var last = self.range.pop();
-    $('#'+last).remove();
-    self.start--;
-    self.end--;
-    self.addOffset(self.start, 0);
+    self.driver.start--;
+    self.driver.end--;
+    self.resize();
   };
   
   self.addOffset = function(offset, pos) {
@@ -54,7 +38,7 @@ function CloudAll(driver, name) {
       var panel = $("#panel");
       var date_id = 'panel-' + data.date;
       var top = 0;
-      var width = panel.width() / (self.end - self.start);
+      var width = panel.width() / (self.driver.end - self.driver.start);
       
       // create date container
       var date_container =
@@ -67,11 +51,9 @@ function CloudAll(driver, name) {
         .css('width', width);
       if (pos == -1) {
         date_container.appendTo(panel);
-        self.range.push(date_id);
       }
       else {
         date_container.prependTo(panel);
-        self.range.unshift(date_id);
       }
       
       // create date header
@@ -123,7 +105,9 @@ function CloudAll(driver, name) {
       addOffsetHandler(self.cache[offset]);
     }
     else {
-      $.get('/cloud_data/' + self.name + '/' + offset, function (data) {
+      $.ajax({url:'/cloud_data/' + self.name + '/' + offset,
+              async: false})
+      .done(function (data) {
         self.cache[offset] = data;
         addOffsetHandler(data);
       });
@@ -138,21 +122,20 @@ function CloudTopic(driver, name, topic) {
   self.topic = self.nav = topic;
   self.data = [];
   self.range = [];
-  self.start = 0;
-  self.end = 7;
-  self.top = 0;
   
   self.resize = function () {
     var resize_helper = function () {
       self.active = 7;
       self.range = [];
-      for (var i = self.start; i < self.end; ++i) {
+      for (var i = self.driver.start; i < self.driver.end; ++i) {
         self.addOffset(i, -1);
       }
       $('html, body').animate({ scrollTop: self.top }, 0);
     }
     if (self.data.length == 0) {
-      $.get('/cloud_data_topic/' + self.name + '/' + self.topic, function (data) {
+      $.ajax({url:'/cloud_data_topic/' + self.name + '/' + self.topic,
+              async: false})
+      .done(function (data) {
         self.data = JSON.parse(data);
         self.center();
         resize_helper();
@@ -164,23 +147,23 @@ function CloudTopic(driver, name, topic) {
   };
   
   self.right = function () {
-    if (self.end == self.data.length) return;
+    if (self.driver.end == self.data.length) return;
     
     var first = self.range.shift();
     $('#'+first).remove();
-    self.start++;
-    self.end++;
-    self.addOffset(self.end - 1, -1);
+    self.driver.start++;
+    self.driver.end++;
+    self.addOffset(self.driver.end - 1, -1);
   };
   
   self.left = function (k) {
-    if (self.start == 0) return;
+    if (self.driver.start == 0) return;
     
     var last = self.range.pop();
     $('#'+last).remove();
-    self.start--;
-    self.end--;
-    self.addOffset(self.start, 0);
+    self.driver.start--;
+    self.driver.end--;
+    self.addOffset(self.driver.start, 0);
   };
   
   self.addOffset = function (offset, pos) {
@@ -188,7 +171,7 @@ function CloudTopic(driver, name, topic) {
     var data = self.data[offset];
     var date_id = 'panel-' + data.date;
     var top = 0;
-    var width = panel.width() / (self.end - self.start) -1;
+    var width = panel.width() / (self.driver.end - self.driver.start) -1;
     
     // create date container
     var date_container =
@@ -252,92 +235,22 @@ function CloudTopic(driver, name, topic) {
     // set the pointers for start and end
     for (var i = 0; i < self.data.length; ++i) {
       if (self.data[i].topics.length > 0 && self.data[i].topics[0].id == self.topic) {
-        self.start = i;
+        self.driver.start = i;
         break;
       }
     }
     // try to center around topic in question
-    if (self.start + 4 > self.data.length) {
-      self.start -= self.start + 4 - self.data.length;
-      self.end = self.start + 4;
+    if (self.driver.start + 4 > self.data.length) {
+      self.driver.start -= self.driver.start + 4 - self.data.length;
+      self.driver.end = self.driver.start + 4;
     }
-    else if (self.start - 3 < 0) {
-      self.start = 0;
-      self.end = 7;
+    else if (self.driver.start - 3 < 0) {
+      self.driver.start = 0;
+      self.driver.end = 7;
     }
     else {
-      self.start = self.start - 3;
-      self.end = self.start + 7;
+      self.driver.start = self.driver.start - 3;
+      self.driver.end = self.driver.start + 7;
     }
   };
-}
-
-function Cloud(name) {
-  var self = this;
-  self.name = name;
-  self.current = [];
-  
-  self.init = function () {
-    $(window).resize(function() {
-      if(this.resizeTO) clearTimeout(this.resizeTO);
-      this.resizeTO = setTimeout(function() {
-        $(this).trigger('resizeEnd');
-      }, 500);
-    });
-    $(window).bind('resizeEnd', function () {
-      self.resize();
-    });
-    $(document).keydown(function (e) {
-      if (e.which == 39) self.right();
-      if (e.which == 37) self.left();
-    });
-    $('#panel-left').click(function () {
-      self.left();
-    });
-    $('#panel-right').click(function () {
-      self.right();
-    });
-    
-    self.add_context(new CloudAll(self, self.name));
-  };
-  
-  self.add_context = function (c) {
-    var txt = (self.current.length == 0 ? ' ' : ' / ') + c.nav;
-    var sz = (self.current.length == 0 ? 40 : 30)
-    $('<span/>', {text : txt})
-    .addClass('fake-link')
-    .css('font-size', sz)
-    .click(function () {
-      self.remove_context(c);
-    })
-    .appendTo('#panel-top');
-    
-    self.current.push(c);
-    self.resize();
-  };
-  
-  self.remove_context = function (c) {
-    while (self.current[self.current.length-1].nav != c.nav) {
-      $('#panel-top').children().slice(self.current.length-1).detach();
-      self.current.pop();
-    }
-    self.resize();
-  };
-  
-  self.resize = function () {
-    var panel = $("#panel");
-    panel.empty();
-    panel.css('width', $(window).width() - 195);
-    panel.css('height', $(window).width() - 25);
-    self.current[self.current.length-1].resize();
-  }
-  self.left = function () {
-    self.current[self.current.length-1].left();
-  }
-  
-  self.right = function () {
-    self.current[self.current.length-1].right();
-  }
-
-  self.init();
 }
