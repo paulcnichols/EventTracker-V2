@@ -3,7 +3,6 @@ function Grapher(driver, name) {
   self.driver = driver;
   self.name = self.nav = name;
   self.cache = {};
-  self.active = 7;
  
   self.resize = function () {
     // remove and resize container
@@ -46,7 +45,7 @@ function Grapher(driver, name) {
   
   self.paint = function () {
     var x_pad = 40;
-    var y_pad = 50;
+    var y_pad = 60;
     var x_max = $('#panel').width() - 2*x_pad;
     var y_max = $('#panel').height() - 2*y_pad;
     
@@ -61,8 +60,9 @@ function Grapher(driver, name) {
     // Draw y axis
     self.paper.path(['M', x_pad, y_pad, 'V', y_pad + y_max].join(' ')).attr({'stroke':'grey'});
     
-    // plot nodes
+    // plot nodes by day
     var n = {};
+    var e = [];
     var xw = (1)/(self.driver.end-self.driver.start) * x_max;
     for (var i = self.driver.start; i < self.driver.end; ++i) {
       
@@ -78,37 +78,109 @@ function Grapher(driver, name) {
           min_w = n.weight;
       });
       
-      for (var j in self.cache[i].topics) {
-        var topic = self.cache[i].topics[j];
+      // plot the nodes for each day
+      $.each(self.cache[i].topics, function (j, topic) {
         var nx = (.8*Math.random()+.1)*xw + (i-self.driver.start)*xw + x_pad;
-        var ny = y_max - (topic.weight - min_w)/(max_w - min_w)*y_max + y_pad;
+        var ny = y_max - (.9+.1*Math.random())*(topic.weight - min_w)/(max_w - min_w)*y_max + y_pad;
         var center = false;
-        self.paper.circle(nx, ny, topic.weight).attr({
+        var p = self.paper.circle(nx, ny, topic.weight)
+        .attr({
           'fill-opactiy' : 95,
           'fill' : center ? 'yellow': 'grey',
           'stroke' : center ? 'blue' : 'black',
-          'stroke-width' : 2});
-        n[j] = {px:nx, py:ny, drawn:false};
+          'stroke-width' : 2})
+        .hover(
+          function () {
+            // bring current node to front
+            this.toFront();
+
+            // perform mini graph search
+            var f = [{id:j, parent: null, weight:1}];
+            var v = {};
+            while (f.length) {
+              var c = f.pop();
+              if (c.parent != null) {
+                var a = n[c.id];
+                var b = n[c.parent];
+                var s = ['M', a.px, a.py,
+                         'C', a.px + .2*(b.px-a.px),
+                              a.py + .8*(b.py-a.py),
+                              b.px - .8*(b.px-a.px),
+                              b.py - .2*(b.py-a.py),
+                              b.px, b.py];
+                e.push(
+                  self
+                  .paper.path(s.join(' '))
+                  .attr({
+                    'stroke':'black',
+                    'stroke-width': c.weight*4,
+                    'id': '#topic' + j})
+                  .toBack());
+                
+              }
+              for (k in n[c.id].edges) {
+                if (typeof(n[k]) == 'undefined' ||
+                    typeof(v[k]) != 'undefined' ||
+                    n[c.id].edges[k]*c.weight < .6) continue;
+                f.push({id:k, parent:c.id, weight:n[c.id].edges[k]*c.weight});
+              }
+              v[c.id] = 1;
+            }
+            var txt;
+            for (var i = self.driver.start; i < self.driver.end; ++i) {
+              if (typeof(self.cache[i].topics[j]) != 'undefined') {
+                txt = self.cache[i].topics[j].words.join("\n");
+                break;
+              }
+            }
+            var tooltip = self.paper.text(n[j].px+70, n[j].py, txt).attr({
+              'font-family' : "'Fugaz One', cursive",
+              'font-size' : 15
+            });
+            var bb = tooltip.getBBox();
+            e.push(self.paper.rect(bb.x, bb.y, bb.width+15, bb.height+15, 15).attr({fill:'white'}));
+            e.push(tooltip);
+            tooltip.toFront();
+          },
+          function () {
+            while (e.length) {
+              e.pop().remove();
+            }
+          }
+        )
+        .click(
+          function () {
+            // total flippin' hack right here. nothing about this says
+            // good design
+            $('#panel-top-button-name').innerHTML = 'Graph View';
+            self.driver.add_context(new CloudTopic(self.driver, self.name, j));
+          }
+        )
+        n[j] = {px:nx, py:ny, node:p, edges: topic.edges};
+      });
+    }
+    // draw edges
+    for (var i = self.driver.start; i < self.driver.end; ++i) {
+      for (var j in self.cache[i].topics) {
+        var topic = self.cache[i].topics[j];
+        var a = n[j];
+        for (var k in topic.edges) {
+          if (typeof(n[k]) == 'undefined') continue;
+          var b = n[k];
+          var s = ['M', a.px, a.py, 'C', a.px + .2*(b.px-a.px),
+                                         a.py + .8*(b.py-a.py),
+                                         b.px - .8*(b.px-a.px),
+                                         b.py - .2*(b.py-a.py),
+                                         b.px, b.py];
+          self.paper.path(s.join(' '))
+          .attr({
+            'stroke':'black',
+            'stroke-width': .25})
+          .toBack();
+        }
+        
       }
     }
-    //// draw edges
-    //for (var i = self.driver.start; i < self.driver.end; ++i) {
-    //  for (var j in self.cache[i].topics) {
-    //    var topic = self.cache[i].topics[j];
-    //    var a = n[j];
-    //    for (var e in topic.edges) {
-    //      if (typeof(n[e]) == 'undefined') continue;
-    //      var b = n[e];
-    //      var s = ['M', a.px, a.py, 'C', a.px + .2*(b.px-a.px),
-    //                                     a.py + .8*(b.py-a.py),
-    //                                     b.px - .8*(b.px-a.px),
-    //                                     b.py - .2*(b.py-a.py),
-    //                                     b.px, b.py];
-    //      var p = self.paper.path(s.join(' ')).attr({stroke:'black', 'stroke-width': 1+topic.edges[e].cosign_similarity*6});
-    //    }
-    //    
-    //  }
-    //}
   };
   function update_info(n) {
     var info_div = $('#'+info);

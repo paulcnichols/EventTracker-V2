@@ -56,7 +56,7 @@ function Driver(name) {
   
   self.remove_context = function (c) {
     while (self.current[self.current.length-1].nav != c.nav) {
-      $('#panel-top').children().slice(self.current.length-1).detach();
+      $('#panel-top span:last-child').detach();
       self.current.pop();
     }
     self.resize();

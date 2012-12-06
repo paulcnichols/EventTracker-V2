@@ -13,7 +13,7 @@
     font-size:50;
     border-bottom:solid;
   }
-  #panel-top-button {
+  #panel-top-ctl {
     color:'lightblue';
     position:fixed;
     height:30;
@@ -59,7 +59,16 @@
   }
 </style>
 <div id="panel-top"></div>
-<div id="panel-top-button"><a class="btn" id="panel-top-button-name">Graph View</a></div>
+<div id="panel-top-ctl">
+  <span> Days: </span>
+  <span id="panel-top-range">7</span>
+  <a class="btn" id="panel-top-plus"><i class="icon-plus"></i></a>
+  <a class="btn" id="panel-top-minus"><i class="icon-minus"></i></a>
+  <span> Layout: </span>
+  <a class="btn" id="panel-top-button-name">Graph View</a>
+</div>
+
+
 <div id="panel-left" class="panel-arrow" style="left:0"><div class="panel-arrow-inner">&#060;&#060;</div></div>
 <div id="panel-right" class="panel-arrow" style="right:0"><div class="panel-arrow-inner">&#062;&#062;</div></div>
 <div id="panel"></div>
@@ -71,20 +80,29 @@
 <script type="text/javascript" charset="utf-8">
   var name = '[% name %]';
   var driver = new Driver(name);
-  var last = [];
   $('#panel-top-button-name').click(function () {
-    if (last.length > 0) {
-      driver.remove_context(last.pop());
-    }
+    var new_context;
     if (this.innerHTML == 'Graph View') {
       this.innerHTML = 'Table View';
-      last.push(new Grapher(driver, name));
+      new_context = new Grapher(driver, name);
     }
     else {
       this.innerHTML = 'Graph View';
-      last.push(new CloudAll(driver, name));
+      new_context = new CloudAll(driver, name);
     }
-    driver.swap_context(last[last.length-1]);
+    driver.swap_context(new_context);
+  });
+  $('#panel-top-plus').click(function () {
+    driver.end++;
+    $("#panel-top-range")[0].innerHTML = driver.end - driver.start;
+    driver.resize();
+  });
+  $('#panel-top-minus').click(function () {
+    if (driver.end - driver.start > 7) {
+      driver.end--;
+      $("#panel-top-range")[0].innerHTML = driver.end - driver.start;
+      driver.resize();
+    }
   });
   
 </script>

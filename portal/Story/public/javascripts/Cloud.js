@@ -97,9 +97,6 @@ function CloudAll(driver, name) {
         //.css('border-radius', 15)
         .appendTo('#'+date_id);
       });
-      
-      // decrement active counter
-      self.active--;
     };
     if (offset in self.cache) {
       addOffsetHandler(self.cache[offset]);
@@ -121,23 +118,22 @@ function CloudTopic(driver, name, topic) {
   self.name = name;
   self.topic = self.nav = topic;
   self.data = [];
-  self.range = [];
   
   self.resize = function () {
+    var panel = $("#panel");
+    panel.empty();
     var resize_helper = function () {
-      self.active = 7;
-      self.range = [];
       for (var i = self.driver.start; i < self.driver.end; ++i) {
         self.addOffset(i, -1);
       }
-      $('html, body').animate({ scrollTop: self.top }, 0);
+      $('html, body').animate({ scrollTop: 0 }, 0);
     }
     if (self.data.length == 0) {
       $.ajax({url:'/cloud_data_topic/' + self.name + '/' + self.topic,
               async: false})
       .done(function (data) {
         self.data = JSON.parse(data);
-        self.center();
+        //self.center();
         resize_helper();
       });  
     }
@@ -148,22 +144,18 @@ function CloudTopic(driver, name, topic) {
   
   self.right = function () {
     if (self.driver.end == self.data.length) return;
-    
-    var first = self.range.shift();
-    $('#'+first).remove();
+
     self.driver.start++;
     self.driver.end++;
-    self.addOffset(self.driver.end - 1, -1);
+    self.resize();
   };
   
   self.left = function (k) {
     if (self.driver.start == 0) return;
-    
-    var last = self.range.pop();
-    $('#'+last).remove();
+
     self.driver.start--;
     self.driver.end--;
-    self.addOffset(self.driver.start, 0);
+    self.resize();
   };
   
   self.addOffset = function (offset, pos) {
@@ -182,11 +174,9 @@ function CloudTopic(driver, name, topic) {
       .css('width', width);
     if (pos == -1) {
       date_container.appendTo(panel);
-      self.range.push(date_id);
     }
     else {
       date_container.prependTo(panel);
-      self.range.unshift(date_id);
     }
     
     // create date header
